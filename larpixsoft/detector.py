@@ -42,7 +42,8 @@ class Detector:
   module_to_io_groups: dict = {}
 
   def get_time_ticks(self) -> np.ndarray:
-    return np.linspace(time_interval[0], time_interval[1], int(round(time_interval[1] - time_interval[0])/time_sampling) + 1)
+    return np.linspace(self.time_interval[0], self.time_interval[1], 
+      int(round(self.time_interval[1] - self.time_interval[0])/self.time_sampling) + 1)
 
 
 def set_detector_properties(detprop_file, pixel_file) -> Detector:
