@@ -1,11 +1,15 @@
 import numpy as np
+import yaml
 
 
-def get_geom_map(geometry_yaml):
+def get_geom_map(pixel_file):
   """
   Returns map from electronics readout channels to x,y pixel position on the anode. 
   geometry yaml: pixel layout yaml (multi_tile_layout-3.0.40.yaml for ND LAr)
   """
+  with open(pixel_file) as pf:
+    geometry_yaml = yaml.load(pf, Loader=yaml.FullLoader)
+
   geometry = { }
 
   pixel_pitch = geometry_yaml['pixel_pitch']
@@ -36,6 +40,8 @@ def get_geom_map(geometry_yaml):
           x, y = x*tile_orientation[2], y*tile_orientation[1]
           x += tile_positions[tile][2]
           y += tile_positions[tile][1]
+          x /= 10 # to cm
+          y /= 10
 
           geometry[(io_group, io_channel, chip, channel)] = x, y
 

@@ -1,12 +1,11 @@
 """
 Set detector constants
 """
-import dataclasses
 import numpy as np
 import yaml
 
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 @dataclass
 class Detector:
@@ -33,13 +32,13 @@ class Detector:
   tile_borders: np.ndarray = np.zeros((2, 2)) # cm
   N_pixels: tuple = (0, 0)
   N_pixels_per_tile: tuple = (0, 0)
-  pixel_connection_dict: dict = {}
+  pixel_connection_dict: dict = field(default_factory=dict)
   pixel_pitch: float = 0.4434 # cm
-  tile_positions: dict = {} # cm
-  tile_orientations: dict = {} # cm
-  tile_map: dict = {}
-  tile_chip_to_io: dict = {}
-  module_to_io_groups: dict = {}
+  tile_positions: dict = field(default_factory=dict) # mm
+  tile_orientations: dict = field(default_factory=dict) # cm
+  tile_map: tuple = ()
+  tile_chip_to_io: dict = field(default_factory=dict)
+  module_to_io_groups: dict = field(default_factory=dict)
 
   def get_time_ticks(self) -> np.ndarray:
     return np.linspace(self.time_interval[0], self.time_interval[1], 
