@@ -3,4 +3,5 @@
 /*.pdf
 data/
 __pycache__/
+plots/
 

@@ -12,58 +12,39 @@ from larpixsoft.geometry import get_geom_map
 
 plt.rc('font', family='serif')
 
-def plot_tpc_borders(detector: Detector):
-  fig, ax = plt.subplots(1,1,tight_layout=True)
-  for border in detector.tpc_borders:
-    rect = plt.Rectangle((border[2,0], border[0,0]), border[2,1] - border[2,0],
-      border[0,1] - border[0,0], linewidth=1, fill=False)
-    ax.add_patch(rect)
-  ax.set_xlim(np.min(detector.tpc_borders[:,2,:]) - 5, np.max(detector.tpc_borders[:,2,:]) + 5)
-  ax.set_ylim(np.min(detector.tpc_borders[:,0,:]) - 5, np.max(detector.tpc_borders[:,0,:]) + 5)
-  ax.set_xlabel("z [cm]")
-  ax.set_ylabel("x [cm]")
-  plt.show()
+def get_wires(pitch,  x_start):
+  wires = { i : (i + 0.5)*pitch for i in range(480) }
+  for ch, wire_x in wires.items():
+    wires[ch] += x_start
 
-def plot_evds(packets, geometry, detector : Detector, N=10, as_pdf=False):
-  norm = colors.Normalize(vmin=0, vmax=256)
-  cmap = cm.jet
-  m = cm.ScalarMappable(norm=norm, cmap=cmap)
+  return wires
 
+def plot_pix_wires(packets, wires, pitch, x_start, detector : Detector, N=5, as_pdf=False):
   n = 0
+
   data_packets = []
   for packet in packets:
     if n >= N:
       break
 
-    if as_pdf:
-      pdf = PdfPages('evd{}.pdf'.format(n))
-
     if packet['packet_type'] == 7 and data_packets:
-      fig, ax = plt.subplots(1,1,tight_layout=True)
-
-      for p in data_packets:
-        rect = plt.Rectangle((p.x + p.anode.tpc_x, p.y + p.anode.tpc_y), detector.pixel_pitch,
-          detector.pixel_pitch, fc=m.to_rgba(p.ADC))
-        ax.add_patch(rect)
-      
-      for tpc in detector.tpc_borders:
-        tpc_rect = plt.Rectangle((tpc[0][0],tpc[1][0]), 97.28, 304.0, linewidth=0.1, edgecolor='k',
-          facecolor=cmap(0),zorder=-1)
-        ax.add_patch(tpc_rect)
-
-      ax.set_aspect("auto")
-      ax.set_xlabel("x [cm]")
-      ax.set_ylabel("y [Cm]")
-      ax.add_patch(tpc_rect)
-      ax.set_xlim(np.min(detector.tpc_borders[:,0,:]),np.max(detector.tpc_borders[:,0,:]))
-      ax.set_ylim(np.min(detector.tpc_borders[:,1,:]),np.max(detector.tpc_borders[:,1,:]))
       if as_pdf:
-        pdf.savefig(bbox_inches='tight')
-        plt.close()
-      else:
-        plt.show()
+        pdf = PdfPages('pix_Zwire{}.pdf'.format(n))
+
+      wire_hits = []
+      for p in data_packets:
+        x = p.x + p.anode.tpc_x
+        if x < x_start or x > max(wires.values()) + 0.5*pitch:
+          continue
+
+        diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }
+
+        wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_lowerz()/10), 'adc' : p.ADC})
 
       fig, ax = plt.subplots(1,1,tight_layout=True)
+      norm = colors.Normalize(vmin=0, vmax=256)
+      cmap = cm.jet
+      m = cm.ScalarMappable(norm=norm, cmap=cmap)
 
       ts = []
       for p in data_packets:
@@ -84,8 +65,26 @@ def plot_evds(packets, geometry, detector : Detector, N=10, as_pdf=False):
       ax.set_xlabel("x [cm]")
       ax.set_ylabel("t [us]")
       ax.add_patch(tpc_rect)
-      ax.set_xlim(np.min(detector.tpc_borders[:,0,:]),np.max(detector.tpc_borders[:,0,:]))
+      ax.set_xlim(x_start, max(wires.values()) + 0.5*pitch)
       ax.set_ylim(t_min, t_max)
+      if as_pdf:
+        pdf.savefig(bbox_inches='tight')
+        plt.close()
+      else:
+        plt.show()
+
+      fig, ax = plt.subplots(1,1,tight_layout=True)
+
+      arr = np.zeros((480, 4492))
+      ts = []
+      for hit in wire_hits:
+        ts.append(hit['tick'])
+        arr[hit['ch'], hit['tick']] = hit['adc']
+
+      ax.imshow(arr.T, interpolation='none', aspect='auto', cmap='jet')
+      ax.set_xlabel("ch")
+      ax.set_ylabel("tick")
+      ax.set_ylim(min(ts) - 100, max(ts) + 100)
       if as_pdf:
         pdf.savefig(bbox_inches='tight')
         plt.close()
@@ -111,6 +110,5 @@ if __name__ == '__main__':
 
   f = h5py.File('data/detsim/output_1_radi.h5', 'r')
 
-  # plot_tpc_borders(detector)
-
-  plot_evds(f['packets'], geometry, detector, N=5, as_pdf=False)
+  wires = get_wires(0.479, 480)
+  plot_pix_wires(f['packets'], wires, 0.479, 480, detector, N=10, as_pdf=True)

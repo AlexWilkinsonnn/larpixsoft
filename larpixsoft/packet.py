@@ -35,10 +35,4 @@ class DataPacket():
       t_d = self.anode.drift_time_lowerz() - self.t()
   
     return t_d
-
-
-    
-
-
-    
     
