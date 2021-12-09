@@ -1,7 +1,6 @@
 import numpy as np
 import yaml
 
-
 def get_geom_map(pixel_file):
   """
   Returns map from electronics readout channels to x,y pixel position on the anode. 
@@ -46,7 +45,6 @@ def get_geom_map(pixel_file):
           geometry[(io_group, io_channel, chip, channel)] = x, y
 
   return geometry
-
 
 def get_tpc_centres(det_yaml):
   tpc_centres = det_yaml['tpc_offsets']

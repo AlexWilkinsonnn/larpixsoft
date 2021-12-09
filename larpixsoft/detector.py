@@ -44,6 +44,9 @@ class Detector:
     return np.linspace(self.time_interval[0], self.time_interval[1], 
       int(round(self.time_interval[1] - self.time_interval[0])/self.time_sampling) + 1)
 
+  def get_zlims(self) -> tuple:
+    return (np.min(self.tpc_borders[:, 2, :]), np.max(self.tpc_borders[:, 2, :]))
+
 
 def set_detector_properties(detprop_file, pixel_file) -> Detector:
     """
