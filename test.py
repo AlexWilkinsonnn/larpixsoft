@@ -13,15 +13,23 @@ from larpixsoft.geometry import get_geom_map
 plt.rc('font', family='serif')
 
 def plot_tpc_borders(detector: Detector):
-  fig, ax = plt.subplots(1,1,tight_layout=True)
+  fig, ax = plt.subplots(1,1,tight_layout=True, figsize=(12,12))
   for border in detector.tpc_borders:
     rect = plt.Rectangle((border[2,0], border[0,0]), border[2,1] - border[2,0],
       border[0,1] - border[0,0], linewidth=1, fill=False)
     ax.add_patch(rect)
+  ax.text(-300,440,"Cathode", rotation='vertical', fontsize=16)
+  ax.text(-350,440,"Anode", rotation='vertical', fontsize=16)
   ax.set_xlim(np.min(detector.tpc_borders[:,2,:]) - 5, np.max(detector.tpc_borders[:,2,:]) + 5)
   ax.set_ylim(np.min(detector.tpc_borders[:,0,:]) - 5, np.max(detector.tpc_borders[:,0,:]) + 5)
-  ax.set_xlabel("z [cm]")
-  ax.set_ylabel("x [cm]")
+  ax.spines['top'].set_color('none')
+  ax.spines['bottom'].set_color('none')
+  ax.spines['left'].set_color('none')
+  ax.spines['right'].set_color('none')
+  ax.set_xlabel("z [cm]", fontsize=16)
+  ax.set_ylabel("x [cm]", fontsize=16)
+  # plt.savefig("ND_lar_top.pdf")
+  # plt.close()
   plt.show()
 
 def plot_evds(packets, geometry, detector : Detector, N=10, as_pdf=False):
@@ -111,6 +119,6 @@ if __name__ == '__main__':
 
   f = h5py.File('data/detsim/output_1_radi.h5', 'r')
 
-  # plot_tpc_borders(detector)
+  plot_tpc_borders(detector)
 
-  plot_evds(f['packets'], geometry, detector, N=5, as_pdf=False)
+  #plot_evds(f['packets'], geometry, detector, N=5, as_pdf=False)
