@@ -5,6 +5,7 @@ import numpy as np
 from matplotlib import cm, colors
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import pyplot as plt
+from numpy.lib.npyio import save
 
 from larpixsoft.detector import Detector, set_detector_properties
 from larpixsoft.packet import DataPacket, TriggerPacket
@@ -19,7 +20,7 @@ def get_wires(pitch,  x_start):
 
   return wires
 
-def plot_pix_wires(packets, wires, pitch, x_start, detector : Detector, N=5, as_pdf=False):
+def plot_pix_wires(packets, wires, pitch, x_start, detector : Detector, N=5, as_pdf=False, save_array=False):
   n = 0
 
   data_packets = []
@@ -70,16 +71,21 @@ def plot_pix_wires(packets, wires, pitch, x_start, detector : Detector, N=5, as_
       if as_pdf:
         pdf.savefig(bbox_inches='tight')
         plt.close()
+      elif save_array:
+        plt.close()
       else:
         plt.show()
 
       fig, ax = plt.subplots(1,1,tight_layout=True)
 
-      arr = np.zeros((480, 4492))
+      arr = np.zeros((480, 4492)) if not save_array else np.zeros((512, 4608))
       ts = []
       for hit in wire_hits:
         ts.append(hit['tick'])
-        arr[hit['ch'], hit['tick']] = hit['adc']
+        if save_array:
+          arr[hit['ch'] + 16, hit['tick'] + 58] = hit['adc']
+        else:
+          arr[hit['ch'], hit['tick']] = hit['adc']
 
       ax.imshow(arr.T, interpolation='none', aspect='auto', cmap='jet')
       ax.set_xlabel("ch")
@@ -89,8 +95,12 @@ def plot_pix_wires(packets, wires, pitch, x_start, detector : Detector, N=5, as_
         pdf.savefig(bbox_inches='tight')
         plt.close()
         pdf.close()
+      elif save_array:
+        np.save('pix_Zwire{}.npy'.format(n), arr)
+        plt.close()
       else:
         plt.show()
+
       
       n += 1
       data_packets.clear()
@@ -111,4 +121,5 @@ if __name__ == '__main__':
   f = h5py.File('data/detsim/output_1_radi.h5', 'r')
 
   wires = get_wires(0.479, 480)
-  plot_pix_wires(f['packets'], wires, 0.479, 480, detector, N=10, as_pdf=True)
+  # plot_pix_wires(f['packets'], wires, 0.479, 480, detector, N=10, as_pdf=True)
+  plot_pix_wires(f['packets'], wires, 0.479, 480, detector, N=3, as_pdf=False, save_array=True)
