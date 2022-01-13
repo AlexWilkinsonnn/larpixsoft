@@ -20,7 +20,7 @@ def get_wires(pitch,  x_start):
 
   return wires
 
-def plot_pix_wires(packets, wires, pitch, x_start, detector : Detector, N=5, as_pdf=False, save_array=False):
+def plot_pix_wires(packets, wires, pitch, x_start, detector : Detector, N=5, as_pdf=False, save_array=False, wire_trace=False):
   n = 0
 
   data_packets = []
@@ -101,7 +101,27 @@ def plot_pix_wires(packets, wires, pitch, x_start, detector : Detector, N=5, as_
       else:
         plt.show()
 
-      
+      if wire_trace:
+        ch = (0, 0)
+        for i, col in enumerate(arr):
+          if np.abs(col).sum() > ch[1]:
+            ch = (i, np.abs(col).sum())
+        ch = ch[0]
+
+        ticks_adc = arr[ch, :]
+        ticks = np.arange(1, arr.shape[1] + 1)
+
+        fig, ax = plt.subplots(tight_layout=True)
+
+        ax.hist(ticks, bins=len(ticks), weights=ticks_adc, histtype='step', linewidth=0.7, color='b')
+        ax.set_ylabel("adc", fontsize=14)
+        ax.set_xlabel("tick", fontsize=14)
+        ax.set_xlim(min(ts) - 10, max(ts) + 10)
+        ax.set_ylim(bottom=-5)
+        plt.title("Channel {} in ROP".format(ch), fontsize=16)
+
+        plt.show()
+
       n += 1
       data_packets.clear()
 
@@ -118,8 +138,8 @@ if __name__ == '__main__':
     'data/pixel_layout/multi_tile_layout-3.0.40.yaml')
   geometry = get_geom_map('data/pixel_layout/multi_tile_layout-3.0.40.yaml')
 
-  f = h5py.File('data/detsim/output_1_radi.h5', 'r')
+  f = h5py.File('data/detsim/output_1_radi.h5', 'r') # neutrino.0_1635125340.edep.larndsim.h5
 
   wires = get_wires(0.479, 480)
   # plot_pix_wires(f['packets'], wires, 0.479, 480, detector, N=10, as_pdf=True)
-  plot_pix_wires(f['packets'], wires, 0.479, 480, detector, N=3, as_pdf=False, save_array=True)
+  plot_pix_wires(f['packets'], wires, 0.479, 480, detector, N=15, as_pdf=False, save_array=False, wire_trace=True)
