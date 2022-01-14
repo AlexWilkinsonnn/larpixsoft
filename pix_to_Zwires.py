@@ -44,20 +44,25 @@ def get_events(packets, N=5):
 
   return data_packets
 
+def get_wire_hits(event_data_packets, pitch, wires, x_start):
+  wire_hits = []
+  for p in event_data_packets:
+    x = p.x + p.anode.tpc_x
+    if x < x_start or x > max(wires.values()) + 0.5*pitch:
+      continue
+
+    diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }
+
+    wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_lowerz()/10), 'adc' : p.ADC})
+
+  return wire_hits
+
 def plot_pix_wires(data_packets, wires, pitch, x_start, detector : Detector, as_pdf=False, save_array=False, wire_trace=False):
   for event_data_packets in data_packets:
     if as_pdf:
       pdf = PdfPages('pix_Zwire{}.pdf'.format(n))
 
-    wire_hits = []
-    for p in event_data_packets:
-      x = p.x + p.anode.tpc_x
-      if x < x_start or x > max(wires.values()) + 0.5*pitch:
-        continue
-
-      diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }
-
-      wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_lowerz()/10), 'adc' : p.ADC})
+    wire_hits = get_wire_hits(event_data_packets, pitch, wires, x_start)
 
     fig, ax = plt.subplots(1,1,tight_layout=True)
     norm = colors.Normalize(vmin=0, vmax=256)
@@ -139,6 +144,9 @@ def plot_pix_wires(data_packets, wires, pitch, x_start, detector : Detector, as_
 
       plt.show()
 
+# def plot_wires_det_true(data_packets, wires, pitch, x_start, detector : Detector, as_pdf=False, save_array=False, wire_trace=False):
+
+
 if __name__ == '__main__':
   detector = set_detector_properties('data/detector/ndlar-module.yaml', 
     'data/pixel_layout/multi_tile_layout-3.0.40.yaml')
@@ -148,5 +156,5 @@ if __name__ == '__main__':
 
   wires = get_wires(0.479, 480)
   data_packets = get_events(f['packets'], N=5)
-  
+
   plot_pix_wires(data_packets, wires, 0.479, 480, detector, as_pdf=False, save_array=False, wire_trace=True)
