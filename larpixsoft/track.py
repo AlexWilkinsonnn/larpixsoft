@@ -1,3 +1,5 @@
+import math
+
 from larpixsoft.detector import Detector
 
 class Track():
@@ -11,9 +13,24 @@ class Track():
 
     self.detector = detector
 
-  def drift_time_lowerz(self):
-    start_t = ((self.z_start - self.detector.get_zlims()[0])/self.detector.vdrift)*(1/self.detector.time_sampling) 
-    mid_t = ((self.z - self.detector.get_zlims()[0])/self.detector.vdrift)*(1/self.detector.time_sampling) 
-    end_t = ((self.z_end - self.detector.get_zlims()[0])/self.detector.vdrift)*(1/self.detector.time_sampling) 
+  def segments(self, segment_length):
+    segments = []
 
-    return start_t, mid_t, end_t
+    k_x = self.x_end - self.x_start
+    k_y = self.y_end - self.y_start
+    k_z = self.z_end - self.z_start
+
+    line_length = math.sqrt(k_x**2 + k_y**2 + k_z**2)
+    N = math.ceil(line_length/segment_length)
+
+    for n in range(N):
+      x = k_x * (n/N) + self.x_start
+      y = k_y * (n/N) + self.y_start
+      z = k_z * (n/N) + self.z_start
+
+      segments.append((x, y, z))
+
+    return segments
+
+  def drift_time_lowerz(self, z):
+    return ((z - self.detector.get_zlims()[0])/self.detector.vdrift)*(1/self.detector.time_sampling) 

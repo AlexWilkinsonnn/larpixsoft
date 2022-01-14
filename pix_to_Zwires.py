@@ -66,6 +66,7 @@ def get_wire_hits(event_data_packets, pitch, wires, x_start):
 
     diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }
 
+    # FD tick is 0.5us so I think this should be /5 but it makes it harder to plot so leave for now
     wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_lowerz()/10),
       'adc' : p.ADC})
 
@@ -74,29 +75,16 @@ def get_wire_hits(event_data_packets, pitch, wires, x_start):
 def get_wire_trackhits(event_tracks, pitch, wires, x_start):
   wire_trackhits = []
   for track in event_tracks:
-    x = track.x
-    if x < x_start or x > max(wires.values()) + 0.5*pitch:
-      continue
+    segments = track.segments(0.0824) # 0.1648cm is the smallest movement that moves into another pixel (one 1us tick)
+    for segment in segments:
+      x, y, z = segment
+      if x < x_start or x > max(wires.values()) + 0.5*pitch:
+        continue
 
-    diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }
+      diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }
 
-    wire_trackhit = {'ch' : min(diffs, key=diffs.get), 'tick' : round(track.drift_time_lowerz()[1]/10),
-      'charge' : track.electrons}
-
-    # Looking at how much extent the track depos have
-    diffs_start = { ch : abs(track.x_start - wire_x) for ch, wire_x in wires.items() }
-    diffs_end = { ch : abs(track.x_end - wire_x) for ch, wire_x in wires.items() }
-    ch_start = min(diffs_start, key=diffs_start.get)
-    ch_end = min(diffs_end, key=diffs_end.get)
-    tick_start = round(track.drift_time_lowerz()[0]/10)
-    tick_end = round(track.drift_time_lowerz()[2]/10)
-
-    for ch in range(ch_start, ch_end + 1):
-      for tick in range(tick_start, tick_end + 1):
-        wire_trackhits.append({'ch' : ch , 'tick' : tick, 'charge' : track.electrons})
-
-    # wire_trackhits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(track.drift_time_lowerz()/10),
-    #   'charge' : track.electrons})
+      wire_trackhits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(track.drift_time_lowerz(z)/10),
+        'charge' : track.electrons/len(segments)})
 
   return wire_trackhits 
 
@@ -297,4 +285,4 @@ if __name__ == '__main__':
   data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'], geometry, detector, N=5)
 
   # plot_pix_wires(data_packets, wires, 0.479, 480, detector, as_pdf=False, save_array=False, wire_trace=True)
-  plot_wires_det_true(data_packets, tracks, wires, 0.479, 480, detector, wire_trace=False)
+  plot_wires_det_true(data_packets, tracks, wires, 0.479, 480, detector, wire_trace=True)
