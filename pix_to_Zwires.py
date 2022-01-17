@@ -15,7 +15,7 @@ from funcs import get_events, get_wire_trackhits, get_wire_hits, get_wires
 plt.rc('font', family='serif')
 
 def plot_pix_wires(data_packets, wires, pitch, x_start, detector : Detector, as_pdf=False, save_array=False, wire_trace=False):
-  for event_data_packets in data_packets:
+  for n, event_data_packets in enumerate(data_packets):
     if as_pdf:
       pdf = PdfPages('pix_Zwire{}.pdf'.format(n))
 
@@ -102,7 +102,7 @@ def plot_pix_wires(data_packets, wires, pitch, x_start, detector : Detector, as_
       plt.show()
 
 def plot_wires_det_true(data_packets, tracks, wires, pitch, x_start, detector : Detector, as_pdf=False, save_array=False, wire_trace=False):
-  for event_data_packets, event_tracks in zip(data_packets, tracks):
+  for n, (event_data_packets, event_tracks) in enumerate(zip(data_packets, tracks)):
     if as_pdf:
       pdf = PdfPages('pix_Zwire{}.pdf'.format(n))
 
@@ -144,7 +144,8 @@ def plot_wires_det_true(data_packets, tracks, wires, pitch, x_start, detector : 
       if not wire_trace:
         pdf.close()
     elif save_array:
-      np.save('pix_Zwire_truedet{}.npy'.format(n), arr)
+      np.save('pix_Zwire_true{}.npy'.format(n), arr_true)
+      np.save('pix_Zwire_det{}.npy'.format(n), arr_det)
       plt.close()
     else:
       plt.show()
@@ -195,7 +196,8 @@ def plot_wires_det_true(data_packets, tracks, wires, pitch, x_start, detector : 
         plt.close()
         pdf.close()
       elif save_array:
-        np.save('pix_Zwire_trace_truedet{}.npy'.format(n), arr)
+        np.save('pix_Zwire_trace_true{}.npy'.format(n), arr_true)
+        np.save('pix_Zwire_trace_det{}.npy'.format(n), arr_det)
         plt.close()
       else:
         plt.show()
