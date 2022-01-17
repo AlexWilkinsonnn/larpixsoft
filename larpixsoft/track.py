@@ -33,4 +33,4 @@ class Track():
     return segments
 
   def drift_time_lowerz(self, z):
-    return ((z - self.detector.get_zlims()[0])/self.detector.vdrift)*(1/self.detector.time_sampling) 
+    return ((z - self.detector.get_zlims()[0])/self.detector.vdrift)*(1/self.detector.time_sampling) + self.t/1000
