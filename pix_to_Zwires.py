@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import cm, colors
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib import pyplot as plt
-from numpy.lib.npyio import save
+from matplotlib.lines import Line2D
 
 from larpixsoft.detector import Detector, set_detector_properties
 from larpixsoft.packet import DataPacket, TriggerPacket
@@ -177,102 +177,102 @@ def plot_pix_wires(data_packets, wires, pitch, x_start, detector : Detector, as_
 
 def plot_wires_det_true(data_packets, tracks, wires, pitch, x_start, detector : Detector, as_pdf=False, save_array=False, wire_trace=False):
   for event_data_packets, event_tracks in zip(data_packets, tracks):
+    if as_pdf:
+      pdf = PdfPages('pix_Zwire{}.pdf'.format(n))
+
     wire_hits = get_wire_hits(event_data_packets, pitch, wires, x_start)
     wire_trackhits = get_wire_trackhits(event_tracks, pitch, wires, x_start)
 
-    fig, ax = plt.subplots(1,1,tight_layout=True)
+    ts = set()
 
-    arr = np.zeros((480, 4492)) if not save_array else np.zeros((512, 4608))
-    ts = []
+    arr_det = np.zeros((480, 4492)) if not save_array else np.zeros((512, 4608))
     for hit in wire_hits:
-      ts.append(hit['tick'])
+      ts.add(hit['tick'])
       if save_array:
-        arr[hit['ch'] + 16, hit['tick'] + 58] += hit['adc']
+        arr_det[hit['ch'] + 16, hit['tick'] + 58] += hit['adc']
       else:
-        arr[hit['ch'], hit['tick']] += hit['adc']
+        arr_det[hit['ch'], hit['tick']] += hit['adc']
 
-    pos = ax.imshow(np.ma.masked_where(arr == 0, arr).T, interpolation='none', aspect='auto', cmap='jet')
-    ax.set_xlabel("ch")
-    ax.set_ylabel("tick")
-    ax.set_ylim(min(ts) - 100, max(ts) + 100)
-    fig.colorbar(pos, ax=ax)
-    if as_pdf:
-      pdf.savefig(bbox_inches='tight')
-      plt.close()
-      pdf.close()
-    elif save_array:
-      np.save('pix_Zwire{}.npy'.format(n), arr)
-      plt.close()
-    else:
-      plt.show()
-
-    if wire_trace:
-      ch = (0, 0)
-      for i, col in enumerate(arr):
-        if np.abs(col).sum() > ch[1]:
-          ch = (i, np.abs(col).sum())
-      ch = ch[0]
-
-      ticks_adc = arr[ch, :]
-      ticks = np.arange(1, arr.shape[1] + 1)
-
-      fig, ax = plt.subplots(tight_layout=True)
-
-      ax.hist(ticks, bins=len(ticks), weights=ticks_adc, histtype='step', linewidth=0.7, color='b')
-      ax.set_ylabel("adc", fontsize=14)
-      ax.set_xlabel("tick", fontsize=14)
-      ax.set_xlim(min(ts) - 10, max(ts) + 10)
-      ax.set_ylim(bottom=-5)
-      plt.title("Channel {} in ROP".format(ch), fontsize=16)
-
-      plt.show()
-
-    fig, ax = plt.subplots(1,1,tight_layout=True)
-
-    arr = np.zeros((480, 4492)) if not save_array else np.zeros((512, 4608))
-    ts = []
+    arr_true = np.zeros((480, 4492)) if not save_array else np.zeros((512, 4608))
     for hit in wire_trackhits:
-      ts.append(hit['tick'])
+      ts.add(hit['tick'])
       if save_array:
-        arr[hit['ch'] + 16, hit['tick'] + 58] += hit['charge']
+        arr_true[hit['ch'] + 16, hit['tick'] + 58] += hit['charge']
       else:
-        arr[hit['ch'], hit['tick']] += hit['charge']
+        arr_true[hit['ch'], hit['tick']] += hit['charge']
+    
+    fig, ax = plt.subplots(1,2,tight_layout=True)
 
-    pos = ax.imshow(np.ma.masked_where(arr == 0, arr).T, interpolation='none', aspect='auto', cmap='jet')
-    ax.set_xlabel("ch")
-    ax.set_ylabel("tick")
-    ax.set_ylim(min(ts) - 100, max(ts) + 100)
-    fig.colorbar(pos, ax=ax)
+    pos = ax[0].imshow(np.ma.masked_where(arr_true == 0, arr_true).T, interpolation='none', aspect='auto', cmap='viridis')
+    ax[0].set_xlabel("ch")
+    ax[0].set_ylabel("tick")
+    ax[0].set_ylim(min(ts) - 100, max(ts) + 100)
+
+    pos = ax[1].imshow(np.ma.masked_where(arr_det == 0, arr_det).T, interpolation='none', aspect='auto', cmap='viridis')
+    ax[1].set_xlabel("ch")
+    ax[1].set_ylim(min(ts) - 100, max(ts) + 100)
+
     if as_pdf:
       pdf.savefig(bbox_inches='tight')
       plt.close()
-      pdf.close()
+      if not wire_trace:
+        pdf.close()
     elif save_array:
-      np.save('pix_Zwire{}.npy'.format(n), arr)
+      np.save('pix_Zwire_truedet{}.npy'.format(n), arr)
       plt.close()
     else:
       plt.show()
 
     if wire_trace:
       ch = (0, 0)
-      for i, col in enumerate(arr):
+      for i, col in enumerate(arr_true):
         if np.abs(col).sum() > ch[1]:
           ch = (i, np.abs(col).sum())
       ch = ch[0]
 
-      ticks_adc = arr[ch, :]
-      ticks = np.arange(1, arr.shape[1] + 1)
+      ticks_charge = arr_true[ch, :]
+      ticks_adc = arr_det[ch, :]
+      ticks = np.arange(1, arr_true.shape[1] + 1)
 
       fig, ax = plt.subplots(tight_layout=True)
 
-      ax.hist(ticks, bins=len(ticks), weights=ticks_adc, histtype='step', linewidth=0.7, color='b')
-      ax.set_ylabel("adc", fontsize=14)
+      ax.hist(ticks, bins=len(ticks), weights=ticks_adc, histtype='step', linewidth=0.7, color='b', label='ADC')
+      ax.set_ylabel("ADC", fontsize=14)
       ax.set_xlabel("tick", fontsize=14)
       ax.set_xlim(min(ts) - 10, max(ts) + 10)
       ax.set_ylim(bottom=-5)
+
+      ax2 = ax.twinx()
+      ax2.hist(ticks, bins=len(ticks), weights=ticks_charge, histtype='step', linewidth=0.7, color='g', label='charge')
+      ax2.set_ylabel("charge", fontsize=14)
+
+      ax_ylims = ax.axes.get_ylim()
+      ax_yratio = ax_ylims[0] / ax_ylims[1]
+      ax2_ylims = ax2.axes.get_ylim()
+      ax2_yratio = ax2_ylims[0] / ax2_ylims[1]
+      if ax_yratio < ax2_yratio:
+          ax2.set_ylim(bottom = ax2_ylims[1]*ax_yratio)
+      else:
+          ax.set_ylim(bottom = ax_ylims[1]*ax2_yratio)
+
       plt.title("Channel {} in ROP".format(ch), fontsize=16)
 
-      plt.show()
+      handles, labels = ax.get_legend_handles_labels()
+      handles2, labels2 = ax2.get_legend_handles_labels()
+      handles += handles2
+      labels += labels2
+      new_handles = [Line2D([], [], c=h.get_edgecolor()) for h in handles]
+      plt.legend(handles=new_handles, labels=labels, prop={'size': 12})
+
+      if as_pdf:
+        pdf.savefig(bbox_inches='tight')
+        plt.close()
+        pdf.close()
+      elif save_array:
+        np.save('pix_Zwire_trace_truedet{}.npy'.format(n), arr)
+        plt.close()
+      else:
+        plt.show()
 
 if __name__ == '__main__':
   detector = set_detector_properties('data/detector/ndlar-module.yaml', 
