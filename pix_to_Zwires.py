@@ -10,7 +10,7 @@ from matplotlib.lines import Line2D
 from larpixsoft.detector import Detector, set_detector_properties
 from larpixsoft.geometry import get_geom_map
 
-from funcs import get_events, get_wire_trackhits, get_wire_hits, get_wires
+from larpixsoft.funcs import get_events, get_wire_trackhits, get_wire_hits, get_wires
 
 plt.rc('font', family='serif')
 
@@ -212,10 +212,7 @@ if __name__ == '__main__':
   f = h5py.File('data/detsim/output_1_radi_numuCC.h5', 'r') # neutrino.0_1635125340.edep.larndsim.h5
 
   wires = get_wires(0.479, 480)
-  data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'], geometry, detector) #, N=5)
-  print(len(data_packets))
-  print(len(tracks))
-  sys.exit()
-
-  # plot_pix_wires(data_packets, wires, 0.479, 480, detector, as_pdf=False, save_array=False, wire_trace=True)
+  data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'], geometry, detector, N=5)
+  
+  plot_pix_wires(data_packets, wires, 0.479, 480, detector, as_pdf=False, save_array=False, wire_trace=True)
   plot_wires_det_true(data_packets, tracks, wires, 0.479, 480, detector, wire_trace=True)

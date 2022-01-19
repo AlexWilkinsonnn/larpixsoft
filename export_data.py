@@ -6,7 +6,7 @@ import numpy as np
 from larpixsoft.detector import set_detector_properties
 from larpixsoft.geometry import get_geom_map
 
-from funcs import get_wires, get_events, get_wire_hits
+from larpixsoft.funcs import get_wires, get_events, get_wire_hits
 
 def main(INPUT_FILE, N):
   detector = set_detector_properties('data/detector/ndlar-module.yaml', 

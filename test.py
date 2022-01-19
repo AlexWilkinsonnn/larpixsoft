@@ -117,8 +117,8 @@ if __name__ == '__main__':
     'data/pixel_layout/multi_tile_layout-3.0.40.yaml')
   geometry = get_geom_map('data/pixel_layout/multi_tile_layout-3.0.40.yaml')
 
-  f = h5py.File('data/detsim/output_1_radi.h5', 'r')
+  f = h5py.File('data/detsim/output_1_radi_numuCC.h5', 'r')
 
   plot_tpc_borders(detector)
 
-  #plot_evds(f['packets'], geometry, detector, N=5, as_pdf=False)
+  plot_evds(f['packets'], geometry, detector, N=5, as_pdf=False)
