@@ -3,7 +3,7 @@ import numpy as np
 from larpixsoft.packet import DataPacket, TriggerPacket
 from larpixsoft.track import Track
 
-def get_wires(pitch,  x_start):
+def get_wires(pitch, x_start):
   wires = { i : (i + 0.5)*pitch for i in range(480) }
   for ch, wire_x in wires.items():
     wires[ch] += x_start

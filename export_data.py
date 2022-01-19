@@ -17,7 +17,7 @@ def main(INPUT_FILE, N):
   x_start = 480
   segment_length = 0.04 # The max step length for LArG4 in [cm]
 
-  f = h5py.File(INPUT_FILE, 'r') # neutrino.0_1635125340.edep.larndsim.h5
+  f = h5py.File(INPUT_FILE, 'r')
 
   out_dir = os.path.join('data/out', os.path.splitext(os.path.basename(INPUT_FILE))[0])
   if not os.path.exists(out_dir):
@@ -26,16 +26,9 @@ def main(INPUT_FILE, N):
   wires = get_wires(pitch, x_start)
   data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'], geometry, detector, N=N)
 
-  for n, (event_data_packets, event_tracks) in enumerate(zip(data_packets, tracks)):
-    print("{}/{}".format(n, len(data_packets)), end='\r')
-
-    wire_hits = get_wire_hits(event_data_packets, pitch, wires, x_start)
-
-    arr_det = np.zeros((1, 512, 4608))
-    for hit in wire_hits:
-      arr_det[0][hit['ch'] + 16, hit['tick'] + 58] += hit['adc']
-
-    np.save(os.path.join(out_dir, "ND_detsim_{}.npy".format(n)), arr_det)
+  n = 0
+  for i, (event_data_packets, event_tracks) in enumerate(zip(data_packets, tracks)):
+    print("{}/{} - {} passed cuts".format(i, len(data_packets), n), end='\r')
 
     x_min_track = min(event_tracks, key=lambda track: min(track.x_start, track.x_end)) 
     x_min = min([x_min_track.x_start, x_min_track.x_start])
@@ -54,9 +47,23 @@ def main(INPUT_FILE, N):
     t_max_track = max(event_tracks, key=lambda track: max(track.t_start, track.t_end))
     t_max = max([t_max_track.t_start, t_max_track.t_start])
 
-    with open(os.path.join(out_dir, "ND_depos_{}.txt".format(n)), 'w') as f:
+    # cuts
+    if z_max - z_min >= 300:
+      continue
+    if x_min <= 479.7605 or x_max >= 709.92:
+      continue
+
+    wire_hits = get_wire_hits(event_data_packets, pitch, wires, x_start)
+
+    arr_det = np.zeros((1, 512, 4608))
+    for hit in wire_hits:
+      arr_det[0][hit['ch'] + 16, hit['tick'] + 58] += hit['adc']
+
+    np.save(os.path.join(out_dir, "ND_detsim_{}.npy".format(i)), arr_det)
+
+    with open(os.path.join(out_dir, "ND_depos_{}.txt".format(i)), 'w') as f:
       f.write("input_file:{},event_num:{},segment_length:{},view:Z,APA_x_start:{}".format(
-        INPUT_FILE, n, segment_length, x_start))
+        INPUT_FILE, i, segment_length, x_start))
       f.write("x_min:{},x_max:{},y_min:{},y_max:{},z_min:{},z_max:{},t_min:{},t_max:{}\n".format(
         x_min, x_max, y_min, y_max, z_min, z_max, t_min, t_max))
       
@@ -69,6 +76,10 @@ def main(INPUT_FILE, N):
             segment['z_start'], segment['z_end'], segment['t_start'], segment['t_end'], 
             segment['electrons'], segment['dE']))
 
+    n += 1
+
+  print("{} passed cuts".format(n))
+    
 def parse_arguments():
   parser = argparse.ArgumentParser()
 
