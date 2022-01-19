@@ -37,14 +37,22 @@ def main(INPUT_FILE, N):
 
     np.save(os.path.join(out_dir, "ND_detsim_{}.npy".format(n)), arr_det)
 
-    x_min = min(event_tracks, key=lambda track: min(track.x_start, track.x_end)) 
-    x_max = max(event_tracks, key=lambda track: max(track.x_start, track.x_end))
-    y_min = min(event_tracks, key=lambda track: min(track.y_start, track.y_end)) 
-    y_max = max(event_tracks, key=lambda track: max(track.y_start, track.y_end))
-    z_min = min(event_tracks, key=lambda track: min(track.z_start, track.z_end)) 
-    z_max = max(event_tracks, key=lambda track: max(track.z_start, track.z_end))
-    t_min = min(event_tracks, key=lambda track: min(track.t_start, track.t_end)) 
-    t_max = max(event_tracks, key=lambda track: max(track.t_start, track.t_end))
+    x_min_track = min(event_tracks, key=lambda track: min(track.x_start, track.x_end)) 
+    x_min = min([x_min_track.x_start, x_min_track.x_start])
+    x_max_track = max(event_tracks, key=lambda track: max(track.x_start, track.x_end))
+    x_max = max([x_max_track.x_start, x_max_track.x_start])
+    y_min_track = min(event_tracks, key=lambda track: min(track.y_start, track.y_end)) 
+    y_min = min([y_min_track.y_start, y_min_track.y_start])
+    y_max_track = max(event_tracks, key=lambda track: max(track.y_start, track.y_end))
+    y_max = max([y_max_track.y_start, y_max_track.y_start])
+    z_min_track = min(event_tracks, key=lambda track: min(track.z_start, track.z_end)) 
+    z_min = min([z_min_track.z_start, z_min_track.z_start])
+    z_max_track = max(event_tracks, key=lambda track: max(track.z_start, track.z_end))
+    z_max = max([z_max_track.z_start, z_max_track.z_start])
+    t_min_track = min(event_tracks, key=lambda track: min(track.t_start, track.t_end)) 
+    t_min = min([t_min_track.t_start, t_min_track.t_start])
+    t_max_track = max(event_tracks, key=lambda track: max(track.t_start, track.t_end))
+    t_max = max([t_max_track.t_start, t_max_track.t_start])
 
     with open(os.path.join(out_dir, "ND_depos_{}.txt".format(n)), 'w') as f:
       f.write("input_file:{},event_num:{},segment_length:{},view:Z,APA_x_start:{}".format(
