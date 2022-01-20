@@ -50,7 +50,9 @@ def get_wire_hits(event_data_packets, pitch, wires, x_start, tick_scaledown=10):
   wire_hits = []
   for p in event_data_packets:
     x = p.x + p.anode.tpc_x
-    if x <= x_start - 0.5*pitch or x >= max(wires.values()) + 0.5*pitch:
+    # print("min(wires_values())={}, min(wires.values()) - 0.5*pitch={}, max(wires.values())={}, max(wires.values()) + 0.5*pitch={}".format(
+    #   min(wires.values()), min(wires.values()) - 0.5*pitch, max(wires.values()), max(wires.values()) + 0.5*pitch))
+    if x <= min(wires.values()) - 0.5*pitch or x >= max(wires.values()) + 0.5*pitch:
       continue
 
     diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }
@@ -67,7 +69,7 @@ def get_wire_trackhits(event_tracks, pitch, wires, x_start, tick_scaledown=10):
     segments = track.segments(0.04) # 0.0206) # 0.0824) # 0.1648cm is the smallest movement that moves into another pixel (one 1us tick)
     for segment in segments:
       x, y, z = segment['x'], segment['y'], segment['z']
-      if x <= x_start - 0.5*pitch or x >= max(wires.values()) + 0.5*pitch:
+      if x <= min(wires.values()) - 0.5*pitch or x >= max(wires.values()) + 0.5*pitch:
         continue
 
       diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }

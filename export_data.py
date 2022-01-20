@@ -62,8 +62,8 @@ def main(INPUT_FILE, N):
     np.save(os.path.join(out_dir, "ND_detsim_{}.npy".format(i)), arr_det)
 
     with open(os.path.join(out_dir, "ND_depos_{}.txt".format(i)), 'w') as f:
-      f.write("input_file:{},event_num:{},segment_length:{},view:Z,APA_x_start:{}".format(
-        INPUT_FILE, i, segment_length, x_start))
+      f.write("input_file:{},event_num:{},segment_length:{},view:Z,first_wire:{},last_wire={}".format(
+        INPUT_FILE, i, segment_length, min(wires.values()), max(wires.values())))
       f.write("x_min:{},x_max:{},y_min:{},y_max:{},z_min:{},z_max:{},t_min:{},t_max:{}\n".format(
         x_min, x_max, y_min, y_max, z_min, z_max, t_min, t_max))
       
