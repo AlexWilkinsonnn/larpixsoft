@@ -19,6 +19,8 @@ def plot_pix_wires(data_packets, wires, pitch, x_start, detector : Detector, as_
     if as_pdf:
       pdf = PdfPages('pix_Zwire{}.pdf'.format(n))
 
+    print(n, end ='\r')
+
     wire_hits = get_wire_hits(event_data_packets, pitch, wires, x_start)
 
     fig, ax = plt.subplots(1,1,tight_layout=True)
@@ -212,7 +214,7 @@ if __name__ == '__main__':
   f = h5py.File('data/detsim/output_1_radi_numuCC.h5', 'r') # neutrino.0_1635125340.edep.larndsim.h5
 
   wires = get_wires(0.479, 480)
-  data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'], geometry, detector, N=5)
-  
+  data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'], geometry, detector, N=30)
+
   plot_pix_wires(data_packets, wires, 0.479, 480, detector, as_pdf=False, save_array=False, wire_trace=True)
-  plot_wires_det_true(data_packets, tracks, wires, 0.479, 480, detector, wire_trace=True)
+  # plot_wires_det_true(data_packets, tracks, wires, 0.479, 480, detector, wire_trace=True)
