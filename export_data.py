@@ -72,7 +72,7 @@ def main(INPUT_FILES, N, OUTPUT_DIR):
 
       arr_det = np.zeros((1, 512, 4608))
       for hit in wire_hits:
-        arr_det[0][hit['ch'] + 16, hit['tick'] + 58] += hit['adc']
+        arr_det[0][hit['ch'] + 16, hit['tick'] + 112] += hit['adc']
 
       np.save(os.path.join(out_dir, "ND_detsim_{}.npy".format(num)), arr_det)
 
