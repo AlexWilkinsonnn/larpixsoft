@@ -27,7 +27,7 @@ class DataPacket():
 
   def project_lowerz(self): 
     """
-    Project onto anodes at large z side of the detector.
+    Project onto anodes at large negative z side of the detector.
     """
     if self.io_group in [1,2]:
       t_d = self.anode.drift_time_lowerz() + self.t()
@@ -35,4 +35,15 @@ class DataPacket():
       t_d = self.anode.drift_time_lowerz() - self.t()
   
     return t_d
+
+  def project_upperz(self): 
+      """
+      Project onto anodes at large positive z side of the detector.
+      """
+      if self.io_group in [1,2]:
+        t_d = self.anode.drift_time_upperz() - self.t()
+      else:
+        t_d = self.anode.drift_time_upperz() + self.t()
+    
+      return t_d
     

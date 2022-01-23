@@ -14,14 +14,14 @@ from larpixsoft.funcs import get_events, get_wire_trackhits, get_wire_hits, get_
 
 plt.rc('font', family='serif')
 
-def plot_pix_wires(data_packets, wires, pitch, x_start, detector : Detector, as_pdf=False, save_array=False, wire_trace=False):
+def plot_pix_wires(data_packets, wires, pitch, detector : Detector, as_pdf=False, save_array=False, wire_trace=False):
   for n, event_data_packets in enumerate(data_packets):
     if as_pdf:
       pdf = PdfPages('pix_Zwire{}.pdf'.format(n))
 
     print(n, end ='\r')
 
-    wire_hits = get_wire_hits(event_data_packets, pitch, wires, x_start)
+    wire_hits = get_wire_hits(event_data_packets, pitch, wires)
 
     fig, ax = plt.subplots(1,1,tight_layout=True)
     norm = colors.Normalize(vmin=0, vmax=256)
@@ -47,7 +47,7 @@ def plot_pix_wires(data_packets, wires, pitch, x_start, detector : Detector, as_
     ax.set_xlabel("x [cm]")
     ax.set_ylabel("t [us]")
     ax.add_patch(tpc_rect)
-    ax.set_xlim(x_start, max(wires.values()) + 0.5*pitch)
+    ax.set_xlim(min(wires.values()) - 0.5*pitch, max(wires.values()) + 0.5*pitch)
     ax.set_ylim(t_min, t_max)
     if as_pdf:
       pdf.savefig(bbox_inches='tight')
@@ -103,15 +103,15 @@ def plot_pix_wires(data_packets, wires, pitch, x_start, detector : Detector, as_
 
       plt.show()
 
-def plot_wires_det_true(data_packets, tracks, wires, pitch, x_start, detector : Detector, as_pdf=False, save_array=False, wire_trace=False):
+def plot_wires_det_true(data_packets, tracks, wires, pitch, detector : Detector, as_pdf=False, save_array=False, wire_trace=False):
   for n, (event_data_packets, event_tracks) in enumerate(zip(data_packets, tracks)):
     if as_pdf:
       pdf = PdfPages('pix_Zwire{}.pdf'.format(n))
 
     print(n, end ='\r')
 
-    wire_hits = get_wire_hits(event_data_packets, pitch, wires, x_start)
-    wire_trackhits = get_wire_trackhits(event_tracks, pitch, wires, x_start)
+    wire_hits = get_wire_hits(event_data_packets, pitch, wires)
+    wire_trackhits = get_wire_trackhits(event_tracks, pitch, wires)
 
     ts = set()
 
@@ -216,5 +216,5 @@ if __name__ == '__main__':
   wires = get_wires(0.479, 480)
   data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'], geometry, detector, N=30)
 
-  plot_pix_wires(data_packets, wires, 0.479, 480, detector, as_pdf=False, save_array=False, wire_trace=True)
-  # plot_wires_det_true(data_packets, tracks, wires, 0.479, 480, detector, wire_trace=True)
+  plot_pix_wires(data_packets, wires, 0.479, detector, as_pdf=False, save_array=False, wire_trace=True)
+  # plot_wires_det_true(data_packets, tracks, wires, 0.479, detector, wire_trace=True)

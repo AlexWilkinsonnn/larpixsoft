@@ -1,4 +1,4 @@
-import os, argparse, sys
+import os, argparse, sys, importlib
 
 import h5py
 import numpy as np
@@ -8,6 +8,9 @@ from larpixsoft.geometry import get_geom_map
 
 from larpixsoft.funcs import get_wires, get_events, get_wire_hits
 
+# NOTE move away from importing classes and functions and just use the module name space
+#     eg. `import larpixsoft.funcs as funcs` then do funcs.get_wires
+
 def main(INPUT_FILES, N, OUTPUT_DIR):
   detector = set_detector_properties('data/detector/ndlar-module.yaml', 
     'data/pixel_layout/multi_tile_layout-3.0.40.yaml')
@@ -16,6 +19,7 @@ def main(INPUT_FILES, N, OUTPUT_DIR):
   pitch = 0.479
   x_start = 480
   segment_length = 0.04 # The max step length for LArG4 in [cm]
+  projection_anode = 'upper_z'
 
   if not OUTPUT_DIR:
     out_dirname = ''
@@ -68,7 +72,16 @@ def main(INPUT_FILES, N, OUTPUT_DIR):
         num += 1
         continue
 
-      wire_hits = get_wire_hits(event_data_packets, pitch, wires, x_start)
+      wire_hits = get_wire_hits(event_data_packets, pitch, wires, tick_scaledown=5, 
+        projection_anode=projection_anode)
+
+      tick_shift = 500 - min(wire_hits, key=lambda hit: hit['tick'])['tick']
+      for hit in wire_hits:
+        hit['tick'] += tick_shift
+      if max(wire_hits, key=lambda hit: hit['tick'])['tick'] >= 4492:
+        print("cut failed on crop")
+        num += 1
+        continue
 
       arr_det = np.zeros((1, 512, 4608))
       for hit in wire_hits:
@@ -77,8 +90,9 @@ def main(INPUT_FILES, N, OUTPUT_DIR):
       np.save(os.path.join(out_dir, "ND_detsim_{}.npy".format(num)), arr_det)
 
       with open(os.path.join(out_dir, "ND_depos_{}.txt".format(num)), 'w') as f:
-        f.write("input_file:{},event_num:{},segment_length:{},view:Z,first_wire:{},last_wire={}".format(
-          input_file, i, segment_length, min(wires.values()), max(wires.values())))
+        f.write("input_file:{},event_num:{},segment_length:{},view:Z,projection_anode:{}," + 
+          "first_wire:{},last_wire={},earliest_tick={}".format(
+          input_file, i, segment_length, projection_anode, min(wires.values()), max(wires.values()), 500))
         f.write("x_min:{},x_max:{},y_min:{},y_max:{},z_min:{},z_max:{},t_min:{},t_max:{}\n".format(
           x_min, x_max, y_min, y_max, z_min, z_max, t_min, t_max))
         
