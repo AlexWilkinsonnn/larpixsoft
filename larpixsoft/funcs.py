@@ -1,4 +1,4 @@
-import importlib
+import importlib, collections
 
 import numpy as np
 
@@ -12,7 +12,7 @@ def get_wires(pitch, x_start):
 
   return wires
 
-def get_events(packets, mc_packets_assn, tracks, geometry, detector, N=0):
+def get_events(packets, mc_packets_assn, tracks, geometry, detector, N=0, x_min_max=(0,0)):
   my_tracks, event_tracks = [], []
   track_ids = set()
   data_packets, event_data_packets = [], []
@@ -40,11 +40,32 @@ def get_events(packets, mc_packets_assn, tracks, geometry, detector, N=0):
     elif packet['packet_type'] == 0:
       p = DataPacket(packet, geometry, detector)
       p.add_trigger(trigger)
-      event_data_packets.append(p)
 
-      for id in mc_packets_assn[i][0]:
-        if id != -1:
-          track_ids.add(id)
+      if x_min_max != (0,0): # x cuts are active
+        valid = True
+        curr_track_ids = [ id for id in mc_packets_assn[i][0] if id != -1 ]
+
+        for id in curr_track_ids:
+          if id != -1:
+            track = Track(tracks[id], detector)
+            x_min = min([track.x_start, track.x_end])
+            x_max = max([track.x_start, track.x_end])
+
+            if x_min <= x_min_max[0] or x_max >= x_min_max[1]:
+              valid = False
+              break
+
+        if valid:
+          event_data_packets.append(p)
+          for id in mc_packets_assn[i][0]:
+            if id != -1:
+              track_ids.add(id)
+
+      else:
+        event_data_packets.append(p)
+        for id in mc_packets_assn[i][0]:
+          if id != -1:
+            track_ids.add(id)
 
   return data_packets, my_tracks
 

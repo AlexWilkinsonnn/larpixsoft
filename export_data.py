@@ -35,17 +35,21 @@ def main(INPUT_FILES, N, OUTPUT_DIR):
     os.makedirs(out_dir)
 
   n_passed, num = 0, 0
+  n_z_failed, n_x_failed, n_adc_failed = 0, 0, 0
   for input_file in INPUT_FILES:
     f = h5py.File(input_file, 'r')
 
     wires = get_wires(pitch, x_start)
-    data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'], geometry, detector, N=N)
+    data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'], geometry,
+      detector, N=N, x_min_max=(479.7605, 709.92)) # min/max wire x +- pitch/2
 
     for i, (event_data_packets, event_tracks) in enumerate(zip(data_packets, tracks)):
       if i + 1 == len(data_packets):
-        print("{}/{} - {} passed cuts".format(i + 1, len(data_packets), n_passed))
+        print("{}/{} - {} passed cuts: {} failed z cuts {} failed x cuts {} failed adc cut".format(
+          i + 1, len(data_packets), n_passed, n_z_failed, n_x_failed, n_adc_failed))
       else:
-        print("{}/{} - {} passed cuts".format(i + 1, len(data_packets), n_passed), end='\r')
+        print("{}/{} - {} passed cuts: {} failed z cuts {} failed x cuts {} failed adc cut".format(
+          i + 1, len(data_packets), n_passed, n_z_failed, n_x_failed, n_adc_failed), end='\r')
 
       x_min_track = min(event_tracks, key=lambda track: min(track.x_start, track.x_end)) 
       x_min = min([x_min_track.x_start, x_min_track.x_end])
@@ -67,9 +71,18 @@ def main(INPUT_FILES, N, OUTPUT_DIR):
       # cuts
       if z_max - z_min >= 300:
         num += 1
+        n_z_failed += 1
         continue
+      
       if x_min <= 479.7605 or x_max >= 709.92:
         num += 1
+        n_x_failed += 1
+        continue
+
+      total_adc = sum([ packet.ADC for packet in event_data_packets ])
+      if total_adc < 5000:
+        num += 1
+        n_adc_failed += 1
         continue
 
       wire_hits = get_wire_hits(event_data_packets, pitch, wires, tick_scaledown=5, 
