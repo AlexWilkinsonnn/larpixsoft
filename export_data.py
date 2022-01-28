@@ -1,4 +1,4 @@
-import os, argparse, sys, importlib
+import os, argparse, sys, importlib, collections
 
 import h5py
 import numpy as np
@@ -11,7 +11,7 @@ from larpixsoft.funcs import get_wires, get_events, get_wire_hits
 # NOTE move away from importing classes and functions and just use the module name space
 #     eg. `import larpixsoft.funcs as funcs` then do funcs.get_wires
 
-def main(INPUT_FILES, N, OUTPUT_DIR):
+def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE):
   detector = set_detector_properties('data/detector/ndlar-module.yaml', 
     'data/pixel_layout/multi_tile_layout-3.0.40.yaml')
   geometry = get_geom_map('data/pixel_layout/multi_tile_layout-3.0.40.yaml')
@@ -20,6 +20,14 @@ def main(INPUT_FILES, N, OUTPUT_DIR):
   x_start = 480
   segment_length = 0.04 # The max step length for LArG4 in [cm]
   projection_anode = 'upper_z'
+
+  excluded_nums = []
+  if EXCLUDED_NUMS_FILE:
+    with open(EXCLUDED_NUMS_FILE, 'r') as f:
+      for line in f:
+        excluded_nums.append(int(line))
+  if excluded_nums:
+    print("{} events are being excluded".format(len(excluded_nums)))
 
   if not OUTPUT_DIR:
     out_dirname = ''
@@ -50,6 +58,11 @@ def main(INPUT_FILES, N, OUTPUT_DIR):
       else:
         print("{}/{} - {} passed cuts: {} failed z cuts {} failed x cuts {} failed adc cut".format(
           i + 1, len(data_packets), n_passed, n_z_failed, n_x_failed, n_adc_failed), end='\r')
+
+      if num in excluded_nums:
+        n_passed += 1 
+        num += 1
+        continue
 
       x_min_track = min(event_tracks, key=lambda track: min(track.x_start, track.x_end)) 
       x_min = min([x_min_track.x_start, x_min_track.x_end])
@@ -130,10 +143,11 @@ def parse_arguments():
 
   parser.add_argument("-n", type=int, default=0)
   parser.add_argument("-o", type=str, default='', help='output dir name')
+  parser.add_argument("--excluded_nums_file", type=str, default='')
 
   args = parser.parse_args()
 
-  return (args.input_files, args.n, args.o)
+  return (args.input_files, args.n, args.o, args.excluded_nums_file)
 
 if __name__ == '__main__':
   arguments = parse_arguments()
