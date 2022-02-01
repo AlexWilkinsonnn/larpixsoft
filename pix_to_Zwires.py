@@ -1,3 +1,4 @@
+from asyncio import proactor_events
 import sys
 
 import h5py
@@ -10,7 +11,7 @@ from matplotlib.lines import Line2D
 from larpixsoft.detector import Detector, set_detector_properties
 from larpixsoft.geometry import get_geom_map
 
-from larpixsoft.funcs import get_events, get_wire_trackhits, get_wire_hits, get_wires
+from larpixsoft.funcs import get_events, get_wire_trackhits, get_wire_hits, get_wires, get_wire_segmenthits
 
 plt.rc('font', family='serif')
 
@@ -110,8 +111,24 @@ def plot_wires_det_true(data_packets, tracks, wires, pitch, detector : Detector,
 
     print(n, end ='\r')
 
-    wire_hits = get_wire_hits(event_data_packets, pitch, wires)
-    wire_trackhits = get_wire_trackhits(event_tracks, pitch, wires)
+    event_segments = []
+    for track in event_tracks:
+      event_segments.extend(track.segments(0.04, drift_time='upper'))
+
+    # Replicating the SED shift being done in FD
+    segment_earliest_tick = min(event_segments, key=lambda segment: segment['drift_time_upperz'])
+    segment_tick_shift = 500 - round(segment_earliest_tick['drift_time_upperz']/5)
+    for segment in event_segments:
+      segment['drift_time_upperz'] += segment_tick_shift*5
+
+    wire_segmenthits = get_wire_segmenthits(event_segments, pitch, wires, tick_scaledown=5, 
+      projection_anode='upper_z')
+    wire_hits = get_wire_hits(event_data_packets, pitch, wires, tick_scaledown=5, 
+      projection_anode='upper_z')
+
+    tick_shift = 500 - min(wire_hits, key=lambda hit: hit['tick'])['tick']
+    for hit in wire_hits:
+      hit['tick'] += tick_shift
 
     ts = set()
 
@@ -124,7 +141,7 @@ def plot_wires_det_true(data_packets, tracks, wires, pitch, detector : Detector,
         arr_det[hit['ch'], hit['tick']] += hit['adc']
 
     arr_true = np.zeros((480, 4492)) if not save_array else np.zeros((512, 4608))
-    for hit in wire_trackhits:
+    for hit in wire_segmenthits:
       ts.add(hit['tick'])
       if save_array:
         arr_true[hit['ch'] + 16, hit['tick'] + 58] += hit['charge']
@@ -214,7 +231,8 @@ if __name__ == '__main__':
   f = h5py.File('data/detsim/output_1_radi_numuCC.h5', 'r') # neutrino.0_1635125340.edep.larndsim.h5
 
   wires = get_wires(0.479, 480)
-  data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'], geometry, detector, N=30)
+  data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'], geometry, detector,
+    N=20, x_min_max=(479.7605, 709.92))
 
-  plot_pix_wires(data_packets, wires, 0.479, detector, as_pdf=False, save_array=False, wire_trace=True)
-  # plot_wires_det_true(data_packets, tracks, wires, 0.479, detector, wire_trace=True)
+  # plot_pix_wires(data_packets, wires, 0.479, detector, as_pdf=False, save_array=False, wire_trace=True)
+  plot_wires_det_true(data_packets, tracks, wires, 0.479, detector, wire_trace=True)
