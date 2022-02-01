@@ -92,7 +92,7 @@ def get_wire_hits(event_data_packets, pitch, wires, tick_scaledown=10, projectio
 
   return wire_hits
 
-def get_wire_trackhits(event_tracks, pitch, wires, tick_scaledown=10):
+def get_wire_trackhits(event_tracks, pitch, wires, tick_scaledown=10, projection_anode='lower_z'):
   wire_trackhits = []
   for track in event_tracks:
     segments = track.segments(0.04) # 0.0206) # 0.0824) # 0.1648cm is the smallest movement that moves into another pixel (one 1us tick)
@@ -103,7 +103,29 @@ def get_wire_trackhits(event_tracks, pitch, wires, tick_scaledown=10):
 
       diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }
 
-      wire_trackhits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(track.drift_time_lowerz(z)/tick_scaledown),
-        'charge' : segment['electrons']})
+      if projection_anode == 'lower_z':
+        wire_trackhits.append({'ch' : min(diffs, key=diffs.get),
+          'tick' : round(track.drift_time_lowerz(z)/tick_scaledown), 'charge' : segment['electrons']})
+      elif projection_anode == 'upper_z':
+        wire_trackhits.append({'ch' : min(diffs, key=diffs.get),
+          'tick' : round(track.drift_time_upperz(z)/tick_scaledown), 'charge' : segment['electrons']})
 
   return wire_trackhits 
+
+def get_wire_segmenthits(event_segments, pitch, wires, tick_scaledown=10, projection_anode='lower_z'):
+  wire_segmenthits = []
+  for segment in event_segments:
+    x, y, z = segment['x'], segment['y'], segment['z']
+    if x <= min(wires.values()) - 0.5*pitch or x >= max(wires.values()) + 0.5*pitch:
+      continue
+
+    diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }
+
+    if projection_anode == 'lower_z':
+      wire_segmenthits.append({'ch' : min(diffs, key=diffs.get),
+        'tick' : round(segment['drift_time_lowerz']/tick_scaledown), 'charge' : segment['electrons']})
+    elif projection_anode == 'upper_z':
+      wire_segmenthits.append({'ch' : min(diffs, key=diffs.get),
+        'tick' : round(segment['drift_time_upperz']/tick_scaledown), 'charge' : segment['electrons']})
+          
+  return wire_segmenthits 
