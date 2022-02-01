@@ -53,10 +53,10 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE):
 
     for i, (event_data_packets, event_tracks) in enumerate(zip(data_packets, tracks)):
       if i + 1 == len(data_packets):
-        print("{}/{} - {} passed cuts: {} failed z cuts {} failed x cuts {} failed adc cut".format(
+        print("[{}/{}] - {} passed cuts: {} failed z cuts {} failed x cuts {} failed adc cut".format(
           i + 1, len(data_packets), n_passed, n_z_failed, n_x_failed, n_adc_failed))
       else:
-        print("{}/{} - {} passed cuts: {} failed z cuts {} failed x cuts {} failed adc cut".format(
+        print("[{}/{}] - {} passed cuts: {} failed z cuts {} failed x cuts {} failed adc cut".format(
           i + 1, len(data_packets), n_passed, n_z_failed, n_x_failed, n_adc_failed), end='\r')
 
       if num in excluded_nums:

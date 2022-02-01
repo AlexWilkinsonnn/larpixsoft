@@ -16,7 +16,7 @@ class Track():
 
     self.detector = detector
 
-  def segments(self, segment_length):
+  def segments(self, segment_length, drift_time='none'):
     segments = []
 
     k_x = self.x_end - self.x_start
@@ -52,9 +52,19 @@ class Track():
       segment['electrons'] = round(self.electrons/N)
       segment['dE'] = self.dE/N
 
+      if drift_time == 'upper':
+        segment['drift_time_upperz'] = ((((self.detector.get_zlims()[1] - segment['z']) / 
+          self.detector.vdrift)*(1/self.detector.time_sampling) + segment['t']/1000))
+      elif drift_time == 'lower':
+        segment['drift_time_lowerz'] = ((((segment['z'] - self.detector.get_zlims()[0]) / 
+          self.detector.vdrift)*(1/self.detector.time_sampling) + segment['t']/1000))
+
       segments.append(segment)
 
     return segments
 
   def drift_time_lowerz(self, z):
     return ((z - self.detector.get_zlims()[0])/self.detector.vdrift)*(1/self.detector.time_sampling) + self.t/1000
+
+  def drift_time_upperz(self, z):
+    return ((self.detector.get_zlims()[1] - z)/self.detector.vdrift)*(1/self.detector.time_sampling) + self.t/1000

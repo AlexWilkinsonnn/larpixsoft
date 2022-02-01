@@ -25,8 +25,6 @@ def main(INPUT_DIR, N):
       print()
       n += 1
       
-        
-
 def parse_arguments():
   parser = argparse.ArgumentParser()
 
