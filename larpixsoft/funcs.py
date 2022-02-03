@@ -71,7 +71,8 @@ def get_events(packets, mc_packets_assn, tracks, geometry, detector, N=0, x_min_
 
 def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector, vertices, x_min_max, N=0):
   my_tracks = []
-  data_packets= []
+  data_packets = []
+  my_vertices = []
   n = 0
 
   packet_tracks_assn = collections.defaultdict(list)
@@ -100,6 +101,7 @@ def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector,
       if len(packet_tracks_assn) != 0:
         data_packets.append(list(packet_tracks_assn.keys()))
         my_tracks.append(list(track_packets_assn.keys()))
+        my_vertices.append(vertex)
               
         n += 1
 
@@ -140,7 +142,7 @@ def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector,
           # Store track and associated packet if track passes cuts
           track_packets_assn[track].append(p)
 
-  return data_packets, my_tracks
+  return data_packets, my_tracks, my_vertices
 
 def get_wire_hits(event_data_packets, pitch, wires, tick_scaledown=10, projection_anode='lower_z'):
   wire_hits = []
