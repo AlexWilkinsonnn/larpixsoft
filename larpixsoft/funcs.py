@@ -90,13 +90,16 @@ def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector,
 
       # Go back over tracks and get rid of any linked to the packets just cut.
       # Keep going over tracks and packets until only valid tracks <--> valid packets
-      while (len(packet_tracks_assn) != packet_tracks_assn_old_len or len(packet_tracks_assn) == 0):
+      while (len(packet_tracks_assn) != packet_tracks_assn_old_len):
         packet_tracks_assn_old_len = len(packet_tracks_assn)
         valid_packets = set(packet_tracks_assn.keys())
         track_packets_assn = { track : ps for track, ps in track_packets_assn.items() if set(ps).issubset(valid_packets) }
 
         valid_tracks = set(track_packets_assn.keys())
         packet_tracks_assn = { p : tracks for p, tracks in packet_tracks_assn.items() if set(tracks).issubset(valid_tracks) }
+
+        if len(packet_tracks_assn) == 0:
+          break
 
       if len(packet_tracks_assn) != 0:
         data_packets.append(list(packet_tracks_assn.keys()))
@@ -157,11 +160,19 @@ def get_wire_hits(event_data_packets, pitch, wires, tick_scaledown=10, projectio
 
     # FD tick is 0.5us
     if projection_anode == 'lower_z':
-      wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_lowerz()/tick_scaledown),
-        'adc' : p.ADC})
+      if tick_scaledown != 0:
+        wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_lowerz()/tick_scaledown),
+          'adc' : p.ADC})
+      else:
+        wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : p.project_lowerz(), 'adc' : p.ADC})     
+
     elif projection_anode == 'upper_z':
-      wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_upperz()/tick_scaledown),
-        'adc' : p.ADC})    
+      if tick_scaledown != 0:
+        wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_upperz()/tick_scaledown),
+          'adc' : p.ADC})  
+      else:
+        wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : p.project_upperz(),
+          'adc' : p.ADC})  
     else:
       raise NotImplementedError
 
