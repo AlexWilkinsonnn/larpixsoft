@@ -7,7 +7,7 @@ class TriggerPacket():
     self.t = packet['timestamp']
 
 class DataPacket():
-  def __init__(self, packet, geometry, detector : Detector):
+  def __init__(self, packet, geometry, detector : Detector, id=-1):
     self.timestamp = packet['timestamp']
     self.ADC = packet['dataword']
     self.t_0 = 0.0
@@ -18,6 +18,24 @@ class DataPacket():
     self.io_group = io_group
     self.x, self.y = geometry[(io_group, io_channel, chip, channel)] 
     self.anode = Anode(module_id, io_group, detector)
+
+    self.objectid = id
+
+  def __eq__(self, other):
+    if type(other) == type(self):
+      if self.id != -1:
+        return self.objectid == other.objectid
+      else:
+        return super(DataPacket, self).__eq__(other)
+
+    else:
+      return False
+
+  def __hash__(self):
+    if self.id != -1:
+      return hash(self.objectid)
+    else:
+      return super(DataPacket, self).__hash__()
 
   def add_trigger(self, trigger_packet : TriggerPacket):
     self.t_0 = trigger_packet.t

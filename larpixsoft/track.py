@@ -3,7 +3,7 @@ import math
 from larpixsoft.detector import Detector
 
 class Track():
-  def __init__(self, track, detector : Detector):
+  def __init__(self, track, detector : Detector, id=-1):
     self.x_start, self.x_end = track['x_start'], track['x_end']
     self.y_start, self.y_end = track['y_start'], track['y_end'] 
     self.z_start, self.z_end = track['z_start'], track['z_end'] 
@@ -13,8 +13,27 @@ class Track():
     self.pdg = track['pdgId']
     self.trackid = track['trackID']
     self.dE = track['dE']
+    self.eventid = track['eventID']
 
     self.detector = detector
+
+    self.objectid = id
+
+  def __eq__(self, other):
+    if type(other) == type(self):
+      if self.id != -1:
+        return self.objectid == other.objectid
+      else:
+        return super(Track, self).__eq__(other)
+
+    else:
+      return False
+
+  def __hash__(self):
+    if self.id != -1:
+      return hash(self.objectid)
+    else:
+      return super(Track, self).__hash__()
 
   def segments(self, segment_length, drift_time='none'):
     segments = []
