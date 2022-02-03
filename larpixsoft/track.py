@@ -21,7 +21,7 @@ class Track():
 
   def __eq__(self, other):
     if type(other) == type(self):
-      if self.id != -1:
+      if self.objectid != -1:
         return self.objectid == other.objectid
       else:
         return super(Track, self).__eq__(other)

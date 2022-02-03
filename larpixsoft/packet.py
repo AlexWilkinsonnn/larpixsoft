@@ -23,7 +23,7 @@ class DataPacket():
 
   def __eq__(self, other):
     if type(other) == type(self):
-      if self.id != -1:
+      if self.objectid != -1:
         return self.objectid == other.objectid
       else:
         return super(DataPacket, self).__eq__(other)
