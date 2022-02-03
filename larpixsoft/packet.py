@@ -32,7 +32,7 @@ class DataPacket():
       return False
 
   def __hash__(self):
-    if self.id != -1:
+    if self.objectid != -1:
       return hash(self.objectid)
     else:
       return super(DataPacket, self).__hash__()
