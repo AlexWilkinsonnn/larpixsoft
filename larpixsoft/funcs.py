@@ -69,6 +69,79 @@ def get_events(packets, mc_packets_assn, tracks, geometry, detector, N=0, x_min_
 
   return data_packets, my_tracks
 
+def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector, vertices, x_min_max, N=0):
+  my_tracks = []
+  data_packets= []
+  n = 0
+
+  packet_tracks_assn = collections.defaultdict(list)
+  track_packets_assn = collections.defaultdict(list)
+
+  for i, packet in enumerate(packets):
+    if N and n >= N:
+      break
+
+    if packet['packet_type'] == 7 and packet_tracks_assn: # End of packets for the new event
+      # Get rid of the packets that link to cut tracks
+      packet_tracks_assn_old_len = len(packet_tracks_assn)
+      valid_tracks = set(track_packets_assn.keys())
+      packet_tracks_assn = { p : tracks for p, tracks in packet_tracks_assn.items() if set(tracks).issubset(valid_tracks) }
+
+      # Go back over tracks and get rid of any linked to the packets just cut.
+      # Keep going over tracks and packets until only valid tracks <--> valid packets
+      while (len(packet_tracks_assn) != packet_tracks_assn_old_len or len(packet_tracks_assn) == 0):
+        packet_tracks_assn_old_len = len(packet_tracks_assn)
+        valid_packets = set(packet_tracks_assn.keys())
+        track_packets_assn = { track : ps for track, ps in track_packets_assn.items() if set(ps).issubset(valid_packets) }
+
+        valid_tracks = set(track_packets_assn.keys())
+        packet_tracks_assn = { p : tracks for p, tracks in packet_tracks_assn.items() if set(tracks).issubset(valid_tracks) }
+
+      if len(packet_tracks_assn) != 0:
+        data_packets.append(list(packet_tracks_assn.keys()))
+        my_tracks.append(list(track_packets_assn.keys()))
+              
+        n += 1
+
+      packet_tracks_assn = collections.defaultdict(list)
+      track_packets_assn = collections.defaultdict(list)
+
+    elif packet['packet_type'] == 7 and not packet_tracks_assn: # Start of packets for new event
+      trigger = TriggerPacket(packet)
+
+    elif packet['packet_type'] == 0: # At new event
+      p = DataPacket(packet, geometry, detector, i)
+      p.add_trigger(trigger)
+
+      # Get vertex using eventid of the first track related to this event
+      if not packet_tracks_assn:
+        curr_track_ids = [ id for id in mc_packets_assn[i][0] if id != -1 ]
+        vertex = vertices[Track(tracks[curr_track_ids[0]], detector).eventid]
+
+      valid = True
+      curr_track_ids = [ id for id in mc_packets_assn[i][0] if id != -1 ]
+      for id in curr_track_ids:
+        if id != -1:
+          track = Track(tracks[id], detector, id)
+          x_min = min([track.x_start, track.x_end])
+          x_max = max([track.x_start, track.x_end])
+          z_min = min([track.z_start, track.z_end])
+          z_max = max([track.z_start, track.z_end])
+
+          # Store all packets and associated tracks
+          packet_tracks_assn[p].append(track)
+
+          if x_min <= x_min_max[0] or x_max >= x_min_max[1]:
+            continue
+          
+          if z_min <= (vertex[2] - 150) or z_max >= (vertex[2] + 150):
+            continue
+
+          # Store track and associated packet if track passes cuts
+          track_packets_assn[track].append(p)
+
+  return data_packets, my_tracks
+
 def get_wire_hits(event_data_packets, pitch, wires, tick_scaledown=10, projection_anode='lower_z'):
   wire_hits = []
   for p in event_data_packets:
