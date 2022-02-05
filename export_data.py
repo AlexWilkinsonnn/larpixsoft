@@ -158,10 +158,10 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE):
       np.save(os.path.join(out_dir, "ND_detsim_{}.npy".format(num)), arr_det)
 
       with open(os.path.join(out_dir, "ND_depos_{}.txt".format(num)), 'w') as f:
-        f.write("input_file:{},event_num:{},segment_length:{},view:{},projection_anode:{}," + 
-          "first_wire:{},last_wire:{},vtx_x:{},vtx_y:{},vtx_z:{},vtx_tick_anchor:{}".format(
-          input_file, i, segment_length, 'Z', projection_anode, min(wires.values()), max(wires.values()),
-          vertex[0], vertex[1], vertex[2], 2000))
+        f.write("input_file:{},event_num:{},segment_length:{},view:{},projection_anode:{},".format(
+          input_file, i, segment_length, 'Z', projection_anode))
+        f.write("first_wire:{},last_wire:{},vtx_x:{},vtx_y:{},vtx_z:{},vtx_tick_anchor:{},".format(
+          min(wires.values()), max(wires.values()), vertex[0], vertex[1], vertex[2], 2000))
         f.write("x_min:{},x_max:{},y_min:{},y_max:{},z_min:{},z_max:{},t_min:{},t_max:{}\n".format(
           x_min, x_max, y_min, y_max, z_min, z_max, t_min, t_max))
         
