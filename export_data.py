@@ -63,12 +63,8 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE):
     #   geometry, detector, N=N, x_min_max=((479.7605 + 5*pitch), (709.92 - 5*pitch))) 
 
     for i, (event_data_packets, event_tracks, vertex) in enumerate(zip(data_packets, tracks, vertices)):
-      if i + 1 == len(data_packets):
-        print("[{}/{}] - {} passed cuts: {} failed adc cut".format(
-          i + 1, len(data_packets), n_passed, n_adc_failed))
-      else:
-        print("[{}/{}] - {} passed cuts: {} failed adc cut".format(
-          i + 1, len(data_packets), n_passed, n_adc_failed), end='\r')
+      print("[{}/{}] - {} passed cuts: {} failed adc cut".format(
+        i + 1, len(data_packets), n_passed, n_adc_failed), end='\r')
 
       if num in excluded_nums:
         n_passed += 1 
@@ -177,7 +173,10 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE):
       n_passed += 1
       num += 1
 
-  print("{} passed cuts".format(n_passed))
+    print("[{}/{}] - {} passed cuts: {} failed adc cut".format(
+      len(data_packets), len(data_packets), n_passed, n_adc_failed))    
+
+  print("{} passed cuts : {} failed adc_cut".format(n_passed, n_adc_failed))
     
 def parse_arguments():
   parser = argparse.ArgumentParser()
