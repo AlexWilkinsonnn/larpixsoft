@@ -57,13 +57,13 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE):
     wires = get_wires(pitch, x_start)
     # xmin_max = min/max wire x +- pitch/2 then tighten cuts by 5 wire pitches to remove the chance
     # of diffusion from tracks just outside the fake APA contributing to packets.
-    data_packets, tracks, vertices, n_failed = get_events_vertex_cuts(f['packets'], f['mc_packets_assn'],
+    data_packets, tracks, file_vertices, n_failed = get_events_vertex_cuts(f['packets'], f['mc_packets_assn'],
       f['tracks'], geometry, detector, vertices, ((479.7605 + 5*pitch), (709.92 - 5*pitch)), N=N) 
     n_assns_failed += n_failed
     # data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'],
     #   geometry, detector, N=N, x_min_max=((479.7605 + 5*pitch), (709.92 - 5*pitch))) 
 
-    for i, (event_data_packets, event_tracks, vertex) in enumerate(zip(data_packets, tracks, vertices)):
+    for i, (event_data_packets, event_tracks, vertex) in enumerate(zip(data_packets, tracks, file_vertices)):
       print("[{}/{}] - {} passed cuts: {} failed adc cut {} failed get_events".format(
         i + 1, len(data_packets), n_passed, n_adc_failed, n_assns_failed), end='\r')
 

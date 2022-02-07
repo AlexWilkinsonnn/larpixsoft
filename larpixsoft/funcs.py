@@ -121,11 +121,7 @@ def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector,
       # Get vertex using eventid of the first track related to this event
       if not packet_tracks_assn:
         curr_track_ids = [ id for id in mc_packets_assn[i][0] if id != -1 ]
-        try:
-          vertex = vertices[Track(tracks[curr_track_ids[0]], detector).eventid]
-        except:
-          print(Track(tracks[curr_track_ids[0]], detector).eventid)
-          raise Exception
+        vertex = vertices[Track(tracks[curr_track_ids[0]], detector).eventid]
 
       valid = True
       curr_track_ids = [ id for id in mc_packets_assn[i][0] if id != -1 ]
@@ -149,7 +145,7 @@ def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector,
           # Store track and associated packet if track passes cuts
           track_packets_assn[track].append(p)
 
-  return data_packets, my_tracks, my_vertices
+  return data_packets, my_tracks, my_vertices, n_failed
 
 def get_wire_hits(event_data_packets, pitch, wires, tick_scaledown=10, projection_anode='lower_z'):
   wire_hits = []
