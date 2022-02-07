@@ -175,7 +175,7 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE):
       num += 1
 
     print("[{}/{}] - {} passed cuts: {} failed adc cut {} failed get_events".format(
-      i + 1, len(data_packets), n_passed, n_adc_failed, n_assns_failed), end='\r')  
+      i + 1, len(data_packets), n_passed, n_adc_failed, n_assns_failed))  
 
   print("{} passed cuts : {} failed adc_cut {} failed get_events".format(
     n_passed, n_adc_failed, n_assns_failed))
