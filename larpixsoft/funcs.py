@@ -73,7 +73,7 @@ def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector,
   my_tracks = []
   data_packets = []
   my_vertices = []
-  n = 0
+  n, n_failed = 0, 0
 
   packet_tracks_assn = collections.defaultdict(list)
   track_packets_assn = collections.defaultdict(list)
@@ -98,15 +98,15 @@ def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector,
         valid_tracks = set(track_packets_assn.keys())
         packet_tracks_assn = { p : tracks for p, tracks in packet_tracks_assn.items() if set(tracks).issubset(valid_tracks) }
 
-        if len(packet_tracks_assn) == 0:
-          break
-
       if len(packet_tracks_assn) != 0:
         data_packets.append(list(packet_tracks_assn.keys()))
         my_tracks.append(list(track_packets_assn.keys()))
         my_vertices.append(vertex)
               
         n += 1
+      
+      else:
+        n_failed += 1
 
       packet_tracks_assn = collections.defaultdict(list)
       track_packets_assn = collections.defaultdict(list)
@@ -121,7 +121,11 @@ def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector,
       # Get vertex using eventid of the first track related to this event
       if not packet_tracks_assn:
         curr_track_ids = [ id for id in mc_packets_assn[i][0] if id != -1 ]
-        vertex = vertices[Track(tracks[curr_track_ids[0]], detector).eventid]
+        try:
+          vertex = vertices[Track(tracks[curr_track_ids[0]], detector).eventid]
+        except:
+          print(Track(tracks[curr_track_ids[0]], detector).eventid)
+          raise Exception
 
       valid = True
       curr_track_ids = [ id for id in mc_packets_assn[i][0] if id != -1 ]
