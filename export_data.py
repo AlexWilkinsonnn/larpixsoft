@@ -154,7 +154,9 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL
 
       np.save(os.path.join(out_dir, "ND_detsim_{}.npy".format(num)), arr_det)
 
-      print(np.min(arr_det), np.max(arr_det))
+      if np.min(arr_det) < 0:
+        print(np.min(arr_det))
+        raise Exception("negative adc in ND")
 
       if ND_ONLY:
         n_passed += 1

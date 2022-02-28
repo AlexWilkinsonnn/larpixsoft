@@ -1,3 +1,4 @@
+from chardet import detect
 from larpixsoft.detector import Detector
 
 from .anode import Anode
@@ -9,7 +10,7 @@ class TriggerPacket():
 class DataPacket():
   def __init__(self, packet, geometry, detector : Detector, id=-1):
     self.timestamp = packet['timestamp']
-    self.ADC = packet['dataword'] - detector.adc_ped
+    self.ADC = packet['dataword'] if packet['dataword'] == 0 else packet['dataword'] - detector.adc_ped
     self.t_0 = 0.0
 
     io_group, io_channel, chip, channel = packet['io_group'], packet['io_channel'], packet['chip_id'], packet['channel_id']
