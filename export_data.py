@@ -12,9 +12,9 @@ from larpixsoft.funcs import get_wires, get_events, get_wire_hits, get_events_ve
 # NOTE move away from importing classes and functions and just use the module name space
 #     eg. `import larpixsoft.funcs as funcs` then do funcs.get_wires
 
-def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE):
+def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL, ND_ONLY):
   detector = set_detector_properties('data/detector/ndlar-module.yaml', 
-    'data/pixel_layout/multi_tile_layout-3.0.40.yaml')
+    'data/pixel_layout/multi_tile_layout-3.0.40.yaml', pedestal=PEDESTAL)
   geometry = get_geom_map('data/pixel_layout/multi_tile_layout-3.0.40.yaml')
 
   pitch = 0.479
@@ -154,6 +154,13 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE):
 
       np.save(os.path.join(out_dir, "ND_detsim_{}.npy".format(num)), arr_det)
 
+      print(np.min(arr_det), np.max(arr_det))
+
+      if ND_ONLY:
+        n_passed += 1
+        num += 1
+        continue
+
       with open(os.path.join(out_dir, "ND_depos_{}.txt".format(num)), 'w') as f:
         f.write("input_file:{},event_num:{},segment_length:{},view:{},projection_anode:{},".format(
           input_file, i, segment_length, 'Z', projection_anode))
@@ -189,10 +196,12 @@ def parse_arguments():
   parser.add_argument("-o", type=str, default='', help='output dir name')
   parser.add_argument("--excluded_nums_file", type=str, default='')
   parser.add_argument("--vertices", type=str, default='')
+  parser.add_argument("--ped", type=int, default=0)
+  parser.add_argument("--nd_only", action='store_true')
 
   args = parser.parse_args()
 
-  return (args.input_files, args.n, args.o, args.excluded_nums_file, args.vertices)
+  return (args.input_files, args.n, args.o, args.excluded_nums_file, args.vertices, args.ped, args.nd_only)
 
 if __name__ == '__main__':
   arguments = parse_arguments()

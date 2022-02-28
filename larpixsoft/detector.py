@@ -39,6 +39,7 @@ class Detector:
   tile_map: tuple = ()
   tile_chip_to_io: dict = field(default_factory=dict)
   module_to_io_groups: dict = field(default_factory=dict)
+  adc_ped: int = 0
 
   def get_time_ticks(self) -> np.ndarray:
     return np.linspace(self.time_interval[0], self.time_interval[1], 
@@ -48,7 +49,7 @@ class Detector:
     return (np.min(self.tpc_borders[:, 2, :]), np.max(self.tpc_borders[:, 2, :]))
 
 
-def set_detector_properties(detprop_file, pixel_file) -> Detector:
+def set_detector_properties(detprop_file, pixel_file, pedestal=0) -> Detector:
     """
     The function loads the detector properties and the pixel geometry YAML files and stores the 
     constants in a Detector dataclass
@@ -127,5 +128,7 @@ def set_detector_properties(detprop_file, pixel_file) -> Detector:
     consts['N_pixels'] = len(np.unique(xs))*ntiles_x, len(np.unique(ys))*ntiles_y
     consts['N_pixels_per_tile'] = len(np.unique(xs)), len(np.unique(ys))
     consts['module_to_io_groups'] = detprop['module_to_io_groups']
+
+    consts['adc_ped'] = pedestal
 
     return Detector(**consts)
