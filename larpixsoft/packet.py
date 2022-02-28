@@ -1,4 +1,3 @@
-from chardet import detect
 from larpixsoft.detector import Detector
 
 from .anode import Anode
