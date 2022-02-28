@@ -99,7 +99,7 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL
         raise Exception("x cut")
 
       total_adc = sum([ packet.ADC for packet in event_data_packets ])
-      if total_adc < 5000:
+      if total_adc < 500:
         num += 1
         n_adc_failed += 1
         continue
