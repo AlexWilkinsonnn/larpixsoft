@@ -8,6 +8,7 @@ class TriggerPacket():
 
 class DataPacket():
   def __init__(self, packet, geometry, detector : Detector, id=-1):
+    self.detector = detector
     self.timestamp = packet['timestamp']
     self.ADC = packet['dataword'] if packet['dataword'] == 0 else packet['dataword'] - detector.adc_ped
     self.t_0 = 0.0
@@ -43,6 +44,34 @@ class DataPacket():
   def t(self):
     return self.timestamp - self.t_0
 
+  def z(self):
+    return self.t()*self.detector.time_sampling*self.detector.vdrift # [ND tick]*[us]*[cm/us] = [cm]
+
+  def z_to_lowerz(self):
+    """
+    Get drift length to set of anodes at large negative z of the detector.
+    """
+    if self.io_group in [1,2]:
+      z_d = (self.anode.z - self.detector.get_zlims()[0]) + self.z()
+    else:
+      z_d = (self.anode.z - self.detector.get_zlims()[0]) - self.z()
+
+    return z_d
+
+  def z_to_upperz(self):
+    """
+    Get drift length to set of anodes at large positive z of the detector.
+    """
+    if self.io_group in [1,2]:
+      z_d = (self.detector.get_zlims()[1] - self.anode.z) - self.z()
+    else:
+      z_d = (self.detector.get_zlims()[1] - self.anode.z) + self.z()
+
+    if z_d < 0: # should always be positive, code is broken if not
+      raise Exception("brokey")
+
+    return z_d
+
   def project_lowerz(self): 
     """
     Project onto anodes at large negative z side of the detector.
@@ -55,13 +84,13 @@ class DataPacket():
     return t_d
 
   def project_upperz(self): 
-      """
-      Project onto anodes at large positive z side of the detector.
-      """
-      if self.io_group in [1,2]:
-        t_d = self.anode.drift_time_upperz() - self.t()
-      else:
-        t_d = self.anode.drift_time_upperz() + self.t()
-    
-      return t_d
+    """
+    Project onto anodes at large positive z side of the detector.
+    """
+    if self.io_group in [1,2]:
+      t_d = self.anode.drift_time_upperz() - self.t()
+    else:
+      t_d = self.anode.drift_time_upperz() + self.t()
+  
+    return t_d
     

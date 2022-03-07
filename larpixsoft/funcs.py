@@ -4,6 +4,7 @@ import numpy as np
 
 from larpixsoft.packet import DataPacket, TriggerPacket
 from larpixsoft.track import Track
+from larpixsoft.anode import Anode
 
 def get_wires(pitch, x_start):
   wires = { i : (i + 0.5)*pitch for i in range(480) }
@@ -157,22 +158,23 @@ def get_wire_hits(event_data_packets, pitch, wires, tick_scaledown=10, projectio
       continue
 
     diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }
-
     # FD tick is 0.5us
     if projection_anode == 'lower_z':
       if tick_scaledown != 0:
         wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_lowerz()/tick_scaledown),
-          'adc' : p.ADC})
+          'adc' : p.ADC, 'z_smalldrift' : p.z(), 'z_bigdrift' : p.z_to_lowerz()})
       else:
-        wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : p.project_lowerz(), 'adc' : p.ADC})     
+        wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : p.project_lowerz(), 'adc' : p.ADC, 
+          'z_smalldrift' : p.z(), 'z_bigdrift' : p.z_to_lowerz()})     
 
     elif projection_anode == 'upper_z':
       if tick_scaledown != 0:
         wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_upperz()/tick_scaledown),
-          'adc' : p.ADC})  
+          'adc' : p.ADC, 'z_smalldrift' : p.z(), 'z_bigdrift' : p.z_to_upperz()})  
       else:
-        wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : p.project_upperz(),
-          'adc' : p.ADC})  
+        wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : p.project_upperz(), 'adc' : p.ADC,
+          'z_smalldrift' : p.z(), 'z_bigdrift' : p.z_to_upperz()})  
+
     else:
       raise NotImplementedError
 
@@ -215,3 +217,48 @@ def get_wire_segmenthits(event_segments, pitch, wires, tick_scaledown=10, projec
         'tick' : round(segment['drift_time_upperz']/tick_scaledown), 'charge' : segment['electrons']})
           
   return wire_segmenthits 
+
+def get_num_cols_to_wire(pitch, wires, geometry, io_groups, detector, verbose=False):
+  x_values = set()
+  for xy in geometry.values():
+    x_values.add(xy[0])
+
+  ch_num_cols_cnt = collections.Counter()
+
+  for io_group in io_groups:
+    module_id = (io_group - 1)//4
+    io_group = io_group - ((io_group - 1)//4)*4
+
+    anode = Anode(module_id, io_group, detector)
+    if anode.tpc_z < 300: # only need to process one row of anodes.
+      continue
+
+    for x_value in sorted(x_values):
+      x = x_value + anode.tpc_x
+      if x <= min(wires.values()) - 0.5*pitch or x >= max(wires.values()) + 0.5*pitch:
+        continue
+
+      diffs = { ch : abs(x - wire_x) for ch, wire_x in wires.items() }
+
+      ch_num_cols_cnt[min(diffs, key=diffs.get)] += 1
+
+  if verbose:
+    print(ch_num_cols_cnt)
+
+    cnts_cntr = collections.Counter()
+    for value in ch_num_cols_cnt.values():
+      cnts_cntr[value] += 1
+    print(cnts_cntr)
+
+  cnts = set(ch_num_cols_cnt.values())
+  if len(cnts) > 2:
+    raise Exception("brokey")
+
+  double_col_cnt = sorted(cnts)[1]
+  single_col_cnt = sorted(cnts)[0]
+  if double_col_cnt/single_col_cnt != 2:
+    raise Exception("brokey")
+  
+  double_col_chs = [ ch for ch, cnt in ch_num_cols_cnt.items() if cnt == double_col_cnt ]
+
+  return double_col_chs
