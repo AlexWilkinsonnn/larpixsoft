@@ -7,12 +7,12 @@ from matplotlib import pyplot as plt
 from larpixsoft.detector import set_detector_properties
 from larpixsoft.geometry import get_geom_map
 
-from larpixsoft.funcs import get_wires, get_events, get_wire_hits, get_events_vertex_cuts, get_wire_segmenthits
+from larpixsoft.funcs import get_wires, get_events, get_wire_hits, get_events_vertex_cuts, get_wire_segmenthits, get_num_cols_to_wire
 
 # NOTE move away from importing classes and functions and just use the module name space
 #     eg. `import larpixsoft.funcs as funcs` then do funcs.get_wires
 
-def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL, ND_ONLY):
+def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL, ND_ONLY, MORE_CHANNELS):
   detector = set_detector_properties('data/detector/ndlar-module.yaml', 
     'data/pixel_layout/multi_tile_layout-3.0.40.yaml', pedestal=PEDESTAL)
   geometry = get_geom_map('data/pixel_layout/multi_tile_layout-3.0.40.yaml')
@@ -54,7 +54,12 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL
   for input_file in INPUT_FILES:
     f = h5py.File(input_file, 'r')
 
-    wires = get_wires(pitch, x_start)
+    wires = get_wires(pitch, x_start) 
+
+    if MORE_CHANNELS:
+      io_groups = [ i for i in range(1, 141) ]
+      double_col_chs = get_num_cols_to_wire(pitch, wires, geometry, io_groups, detector)  
+
     # xmin_max = min/max wire x +- pitch/2 then tighten cuts by 5 wire pitches to remove the chance
     # of diffusion from tracks just outside the fake APA contributing to packets.
     data_packets, tracks, file_vertices, n_failed = get_events_vertex_cuts(f['packets'], f['mc_packets_assn'],
@@ -65,7 +70,7 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL
 
     for i, (event_data_packets, event_tracks, vertex) in enumerate(zip(data_packets, tracks, file_vertices)):
       print("[{}/{}] - {} passed cuts: {} failed adc cut {} failed get_events".format(
-        i + 1, len(data_packets), n_passed, n_adc_failed, n_assns_failed), end='\r')
+        i + 1, len(data_packets), n_passed, n_adc_failed, n_assns_failed), end='\r', flush=True)
 
       if num in excluded_nums:
         n_passed += 1 
@@ -116,10 +121,58 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL
         num += 1
         raise Exception("tick window cut")
 
-      arr_det = np.zeros((1, 512, 4608))
-      for hit in wire_hits:
-        arr_det[0, hit['ch'] + 16, hit['tick'] + 58] += hit['adc']
+      if MORE_CHANNELS:
+        # ch0: adc, ch1: drift anode, ch2: drift upper/lower, ch3: num packets stacked, ch4: two pixel columns at this wire?
+        arr_det = np.zeros((5, 512, 4608))
+        for hit in wire_hits:
+          arr_det[0, hit['ch'] + 16, hit['tick'] + 58] += hit['adc']
+          arr_det[1, hit['ch'] + 16, hit['tick'] + 58] += np.sqrt(hit['z_smalldrift'])*hit['adc']
+          arr_det[2, hit['ch'] + 16, hit['tick'] + 58] += np.sqrt(hit['z_bigdrift'])*hit['adc']
+          if hit['adc']:
+            arr_det[3, hit['ch'] + 16, hit['tick'] + 58] += 1
 
+        # Finishing weighted mean of drift distances
+        for i, j in zip(arr_det[1].nonzero()[0], arr_det[1].nonzero()[1]):
+          if arr_det[0][i, j] != 0:
+            arr_det[1][i, j] /= arr_det[0][i, j]
+
+        for i, j in zip(arr_det[2].nonzero()[0], arr_det[2].nonzero()[1]):
+          if arr_det[0][i, j] != 0:
+            arr_det[2][i, j] /= arr_det[0][i, j]
+
+        for ch in double_col_chs:
+          arr_det[4, ch + 16, 58:-58] = 1
+
+      else:
+        arr_det = np.zeros((1, 512, 4608))
+        for hit in wire_hits:
+          arr_det[0, hit['ch'] + 16, hit['tick'] + 58] += hit['adc']
+
+      # Plot new channels to check they make sense
+      # arr = arr_det[:, 16:-16, 58:-58]
+      # arr_nddrift = arr[1]
+      # arr_fddrift = arr[2]
+      # arr_numpackets = arr[3]
+      # arr_doublechs = arr[4]
+
+      # plt.imshow(np.ma.masked_where(arr_nddrift == 0, arr_nddrift).T, cmap='jet', interpolation='none', aspect='auto')
+      # plt.colorbar()
+      # plt.show()
+
+      # plt.imshow(np.ma.masked_where(arr_fddrift == 0, arr_fddrift).T, cmap='jet', interpolation='none', aspect='auto')
+      # plt.colorbar()
+      # plt.show()
+
+      # plt.imshow(np.ma.masked_where(arr_numpackets == 0, arr_numpackets).T, cmap='jet', interpolation='none', aspect='auto')
+      # plt.colorbar()
+      # plt.show()
+
+      # plt.imshow(arr_doublechs.T, cmap='jet', interpolation='none', aspect='auto')
+      # plt.colorbar()
+      # plt.show()
+
+      # continue
+        
       # Plot projected track segments alongside packets to check all looks good
       # event_segments = []
       # for track in event_tracks:
@@ -152,11 +205,12 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL
 
       # plt.show()
 
-      np.save(os.path.join(out_dir, "ND_detsim_{}.npy".format(num)), arr_det)
-
       if np.min(arr_det) < 0:
         print(np.min(arr_det))
-        raise Exception("negative adc in ND")
+        print(np.argmin(arr_det))
+        raise Exception("negative value in ND image")
+
+      np.save(os.path.join(out_dir, "ND_detsim_{}.npy".format(num)), arr_det)
 
       if ND_ONLY:
         n_passed += 1
@@ -184,7 +238,7 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL
       num += 1
 
     print("[{}/{}] - {} passed cuts: {} failed adc cut {} failed get_events".format(
-      i + 1, len(data_packets), n_passed, n_adc_failed, n_assns_failed))  
+      len(data_packets), len(data_packets), n_passed, n_adc_failed, n_assns_failed))  
 
   print("{} passed cuts : {} failed adc_cut {} failed get_events".format(
     n_passed, n_adc_failed, n_assns_failed))
@@ -200,10 +254,13 @@ def parse_arguments():
   parser.add_argument("--vertices", type=str, default='')
   parser.add_argument("--ped", type=int, default=0)
   parser.add_argument("--nd_only", action='store_true')
+  parser.add_argument("--more_channels", action='store_true',
+    help='channels in ND image for ND drift length and FD drift length + for ND->FD downsampling info')
 
   args = parser.parse_args()
 
-  return (args.input_files, args.n, args.o, args.excluded_nums_file, args.vertices, args.ped, args.nd_only)
+  return (args.input_files, args.n, args.o, args.excluded_nums_file, args.vertices, args.ped,
+    args.nd_only, args.more_channels)
 
 if __name__ == '__main__':
   arguments = parse_arguments()
