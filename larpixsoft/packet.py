@@ -72,6 +72,17 @@ class DataPacket():
 
     return z_d
 
+  def z_global(self):
+    """
+    Get z coordinate in detector coordinates.
+    """
+    if self.io_group in [1,2]:
+      z = self.anode.z - self.z()
+    else:
+      z = self.anode.z + self.z()
+
+    return z
+
   def project_lowerz(self): 
     """
     Project onto anodes at large negative z side of the detector.

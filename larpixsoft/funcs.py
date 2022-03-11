@@ -162,18 +162,18 @@ def get_wire_hits(event_data_packets, pitch, wires, tick_scaledown=10, projectio
     if projection_anode == 'lower_z':
       if tick_scaledown != 0:
         wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_lowerz()/tick_scaledown),
-          'adc' : p.ADC, 'z_smalldrift' : p.z(), 'z_bigdrift' : p.z_to_lowerz()})
+          'adc' : p.ADC, 'z_smalldrift' : p.z(), 'z_global' : p.z_global()})
       else:
         wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : p.project_lowerz(), 'adc' : p.ADC, 
-          'z_smalldrift' : p.z(), 'z_bigdrift' : p.z_to_lowerz()})     
+          'z_smalldrift' : p.z(), 'z_global' : p.z_global()})     
 
     elif projection_anode == 'upper_z':
       if tick_scaledown != 0:
         wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : round(p.project_upperz()/tick_scaledown),
-          'adc' : p.ADC, 'z_smalldrift' : p.z(), 'z_bigdrift' : p.z_to_upperz()})  
+          'adc' : p.ADC, 'z_smalldrift' : p.z(), 'z_global' : p.z_global()})  
       else:
         wire_hits.append({'ch' : min(diffs, key=diffs.get), 'tick' : p.project_upperz(), 'adc' : p.ADC,
-          'z_smalldrift' : p.z(), 'z_bigdrift' : p.z_to_upperz()})  
+          'z_smalldrift' : p.z(), 'z_global' : p.z_global()})  
 
     else:
       raise NotImplementedError
