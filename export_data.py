@@ -128,6 +128,8 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL
         arr_det = np.zeros((5, 512, 4608))
         for hit in wire_hits:
           fd_drift = (vertex[2] - hit['z_global']) + 163.705 # 163.705 is the x coordinate of the vertex in the FD for vertex alignment at 2000 ticks
+          if fd_drift < 0:
+            raise Exception("brokey")
 
           arr_det[0, hit['ch'] + 16, hit['tick'] + 58] += hit['adc']
           arr_det[1, hit['ch'] + 16, hit['tick'] + 58] += np.sqrt(hit['z_smalldrift'])*hit['adc']
@@ -250,7 +252,7 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL
   print("{} passed cuts : {} failed adc_cut {} failed get_events".format(
     n_passed, n_adc_failed, n_assns_failed))
 
-  print("non_zero_min_fd_drift={}, max_fd_drift={}".format(min(min_nonzero_fd_drifts)), max(max_fd_drifts))
+  print("non_zero_min_fd_drift={}, max_fd_drift={}".format(min(min_nonzero_fd_drifts), max(max_fd_drifts)))
     
 def parse_arguments():
   parser = argparse.ArgumentParser()

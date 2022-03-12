@@ -76,10 +76,10 @@ class DataPacket():
     """
     Get z coordinate in detector coordinates.
     """
-    if self.io_group in [1,2]:
-      z = self.anode.z - self.z()
-    else:
+    if self.io_group in [1,2]: # These are the lower z apas so facing in the increasing z direction
       z = self.anode.z + self.z()
+    else:
+      z = self.anode.z - self.z()
 
     return z
 
