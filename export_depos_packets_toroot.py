@@ -1,4 +1,5 @@
-import os, argparse 
+import os, argparse
+from tkinter import W 
 
 import ROOT, h5py
 from matplotlib import pyplot as plt
@@ -186,7 +187,7 @@ def parse_arguments():
   parser.add_argument("-o", type=str, default='', help='output root file name')
   parser.add_argument("--excluded_nums_file", type=str, default='')
   parser.add_argument("--vertices", type=str, default='')
-  parser.add_argument("--ped", type=int, default=0)
+  parser.add_argument("--ped", type=int, default=0, help="ND has a 74 adc pedestal")
   parser.add_argument("--nd_only", action='store_true')
   parser.add_argument("--more_channels", action='store_true',
     help='channels in ND image for ND drift length and FD drift length + for ND->FD downsampling info')
