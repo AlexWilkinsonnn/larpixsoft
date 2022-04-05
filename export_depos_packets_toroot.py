@@ -153,7 +153,6 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
         packet[2] = p.z_global()
         packet[3] = p.t()
         packet[4] = p.ADC 
-        print(p.ADC)
         packets.push_back(packet)
         # packet_x.append(packet[0])
         # packet_y.append(packet[1])
