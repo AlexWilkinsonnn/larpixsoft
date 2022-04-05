@@ -21,7 +21,3 @@ class Anode():
 
   def drift_time_upperz(self):
     return ((self.detector.get_zlims()[1] - self.z)/self.detector.vdrift)*(1/self.detector.time_sampling) 
-
-
-  
-      

@@ -1,4 +1,3 @@
-from asyncio import proactor_events
 import sys
 
 import h5py

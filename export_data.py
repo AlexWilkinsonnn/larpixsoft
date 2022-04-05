@@ -96,7 +96,7 @@ def main(INPUT_FILES, N, OUTPUT_DIR, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL
       t_max_track = max(event_tracks, key=lambda track: max(track.t_start, track.t_end))
       t_max = max([t_max_track.t_start, t_max_track.t_end])
 
-      # cuts
+      # cuts, these shouldn't be needed if get_events_vertex_cuts is working as intended
       if z_max - z_min >= 300:
         num += 1
         raise Exception("z cut")
