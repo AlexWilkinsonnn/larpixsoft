@@ -70,7 +70,7 @@ def get_events(packets, mc_packets_assn, tracks, geometry, detector, N=0, x_min_
 
   return data_packets, my_tracks
 
-def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector, vertices, x_min_max, N=0):
+def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector, vertices, x_min_max, y_min_max=(0,0), N=0):
   my_tracks = []
   data_packets = []
   my_vertices = []
@@ -124,7 +124,6 @@ def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector,
         curr_track_ids = [ id for id in mc_packets_assn[i][0] if id != -1 ]
         vertex = vertices[Track(tracks[curr_track_ids[0]], detector).eventid]
 
-      valid = True
       curr_track_ids = [ id for id in mc_packets_assn[i][0] if id != -1 ]
       for id in curr_track_ids:
         if id != -1:
@@ -142,6 +141,13 @@ def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector,
           
           if z_min <= (vertex[2] - 150) or z_max >= (vertex[2] + 150):
             continue
+          
+          if y_min_max != (0,0):
+            y_min = min([track.y_start, track.y_end])
+            y_max = max([track.y_start, track.y_end])
+            
+            if y_min <= y_min_max[0] or y_max >= y_min_max[1]:
+              continue
 
           # Store track and associated packet if track passes cuts
           track_packets_assn[track].append(p)
