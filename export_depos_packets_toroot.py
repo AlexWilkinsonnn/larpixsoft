@@ -1,5 +1,4 @@
 import os, argparse
-from tkinter import W 
 
 import ROOT, h5py
 from matplotlib import pyplot as plt
@@ -17,8 +16,8 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
 
   pitchZ = 0.479
   pitchUV = 0.4669
-  y_min = np.min(detector.tpc_borders[:,1,:])
-  y_max = np.max(detector.tpc_borders[:,1,:])
+  y_start = np.min(detector.tpc_borders[:,1,:])
+  y_end = np.max(detector.tpc_borders[:,1,:])
   x_start = 480 - 0.5*pitchZ
   x_end = 480 + 480*pitchZ 
   segment_length = 0.04 # The max step length for LArG4 in [cm]
@@ -57,7 +56,7 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
     # of diffusion from tracks just outside the fake APA contributing to packets.
     data_packets, tracks, file_vertices, n_failed = get_events_vertex_cuts(f['packets'], f['mc_packets_assn'],
       f['tracks'], geometry, detector, vertices, ((x_start + 5*pitchZ), (x_end - 5*pitchZ)),
-      y_min_max=((y_min + 5*pitchUV), (y_max - 5*pitchUV)), N=N) 
+      y_min_max=((y_start + 5*pitchUV), (y_end - 5*pitchUV)), N=N) 
     n_assns_failed += n_failed
     # data_packets, tracks = get_events(f['packets'], f['mc_packets_assn'], f['tracks'],
     #   geometry, detector, N=N, x_min_max=((479.7605 + 5*pitch), (709.92 - 5*pitch))) 
