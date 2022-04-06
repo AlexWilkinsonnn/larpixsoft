@@ -5,5 +5,5 @@ data/
 __pycache__/
 plots/
 
-test.root
+*.root
 
