@@ -114,10 +114,10 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
       # packet_x, packet_y, packet_z = [], [], []
 
       # Write vertex info
-      vertex_info[0] = vertex[0]
-      vertex_info[1] = vertex[1]
-      vertex_info[2] = vertex[2]
-      vertex_info[3] = vertex[3]
+      vertex_info[0] = vertex[0] # x
+      vertex_info[1] = vertex[1] # y
+      vertex_info[2] = vertex[2] # z
+      vertex_info[3] = vertex[3] # t
       # vertex_x.append(vertex[0])
       # vertex_y.append(vertex[1])
       # vertex_z.append(vertex[2])
@@ -146,12 +146,13 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
 
       # Wrtie packets
       for p in event_data_packets:
-        packet = ROOT.vector("double")(5)
+        packet = ROOT.vector("double")(6)
         packet[0] = p.x + p.anode.tpc_x
         packet[1] = p.y + p.anode.tpc_y
         packet[2] = p.z_global()
         packet[3] = p.t()
         packet[4] = p.ADC 
+        packet[5] = p.z() # nd drift length
         packets.push_back(packet)
         # packet_x.append(packet[0])
         # packet_y.append(packet[1])
