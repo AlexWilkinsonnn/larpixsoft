@@ -3,14 +3,24 @@ import os, argparse
 import ROOT
 from matplotlib import pyplot as plt
 import numpy as np
+from tqdm import tqdm
 
-def main(INPUT_FILE, N, OUTPUT_NAME, PLOT):
+def main(INPUT_FILE, N, OUTPUT_DIR, PLOT):
   f = ROOT.TFile.Open(INPUT_FILE, "READ")
   t = f.Get("IonAndScint/packet_projections")
+  
+  out_dir_Z = os.path.join(OUTPUT_DIR, 'Z')
+  out_dir_U = os.path.join(OUTPUT_DIR, 'U')
+  out_dir_V = os.path.join(OUTPUT_DIR, 'V')
+  for dir in [out_dir_Z, out_dir_U, out_dir_V]:
+    if not os.path.exists(dir):
+      os.makedirs(dir)
 
-  for i, event in enumerate(t): 
+  tree_len = N if N else t.GetEntries()
+  for i, event in enumerate(tqdm(t, total=tree_len)):
     if N and i >= N:
       break
+
     id = event.eventid  
     vertex_z = event.vertex[2]
 
@@ -99,6 +109,10 @@ def main(INPUT_FILE, N, OUTPUT_NAME, PLOT):
         plt.title("{} num packets".format(name))
         plt.colorbar()
         plt.show()
+        
+    np.save(os.path.join(out_dir_Z, "ND_detsimZ_{}.npy".format(id)), arrZ)
+    np.save(os.path.join(out_dir_U, "ND_detsimU_{}.npy".format(id)), arrU)
+    np.save(os.path.join(out_dir_V, "ND_detsimV_{}.npy".format(id)), arrV)
 
 def parse_arguments():
   parser = argparse.ArgumentParser()
@@ -115,6 +129,9 @@ def parse_arguments():
 
 if __name__ == '__main__':
   arguments = parse_arguments()
+
+  if arguments[2] == '':
+    raise Exception("Specify output directory")
 
   main(*arguments)
 
