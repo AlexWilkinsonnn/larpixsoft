@@ -37,24 +37,29 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT):
       tickV = int(hit[8])
       adc = int(hit[9])
       nd_drift = hit[10]
+      fd_driftZ = hit[11]
+      fd_driftU = hit[12]
+      fd_driftV = hit[13]
 
-      fd_drift = (vertex_z - z) + 163.705 # drift distance of 2000 tick vertex to Z plane.
+      if fd_driftZ <= 0.0 or fd_driftU <= 0.0 or fd_driftV <= 0.0:
+        print("FD drift is brokey somewhere")
+        print(fd_driftZ, fd_driftU, fd_driftV, sep=" -- ")
 
       arrZ[0, chZ + 16, tickZ + 58] += adc
       arrZ[1, chZ + 16, tickZ + 58] += np.sqrt(nd_drift)*adc
-      arrZ[2, chZ + 16, tickZ + 58] += np.sqrt(fd_drift)*adc
+      arrZ[2, chZ + 16, tickZ + 58] += np.sqrt(fd_driftZ)*adc
       if adc:
         arrZ[3, chZ + 16, tickZ + 58] += 1
 
       arrU[0, chU + 112, tickU + 58] += adc
       arrU[1, chU + 112, tickU + 58] += np.sqrt(nd_drift)*adc
-      arrU[2, chU + 112, tickU + 58] += np.sqrt(fd_drift)*adc
+      arrU[2, chU + 112, tickU + 58] += np.sqrt(fd_driftU)*adc
       if adc:
         arrU[3, chU + 112, tickU + 58] += 1
 
       arrV[0, chV + 112, tickV + 58] += adc
       arrV[1, chV + 112, tickV + 58] += np.sqrt(nd_drift)*adc
-      arrV[2, chV + 112, tickV + 58] += np.sqrt(fd_drift)*adc
+      arrV[2, chV + 112, tickV + 58] += np.sqrt(fd_driftV)*adc
       if adc:
         arrV[3, chV + 112, tickV + 58] += 1
     
