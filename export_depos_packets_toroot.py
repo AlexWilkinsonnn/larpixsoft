@@ -9,7 +9,8 @@ from larpixsoft.geometry import get_geom_map
 
 from larpixsoft.funcs import get_events_vertex_cuts
 
-def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL, ND_ONLY, MORE_CHANNELS):
+def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL, ND_ONLY, MORE_CHANNELS,
+  SEGMENT_LENGTH):
   detector = set_detector_properties('data/detector/ndlar-module.yaml', 
     'data/pixel_layout/multi_tile_layout-3.0.40.yaml', pedestal=PEDESTAL)
   geometry = get_geom_map('data/pixel_layout/multi_tile_layout-3.0.40.yaml')
@@ -20,7 +21,7 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
   y_end = np.max(detector.tpc_borders[:,1,:])
   x_start = 480 - 0.5*pitchZ
   x_end = 480 + 480*pitchZ 
-  segment_length = 0.04 # The max step length for LArG4 in [cm]
+#   segment_length = 0.04 # The max step length for LArG4 in [cm]
 
   excluded_nums = []
   if EXCLUDED_NUMS_FILE:
@@ -124,7 +125,7 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
 
       # Write depos
       for track in event_tracks:
-        segments = track.segments(segment_length)
+        segments = track.segments(SEGMENT_LENGTH)
         for segment in segments:
           depo = ROOT.vector("double")(12)
           depo[0] = track.trackid
@@ -189,12 +190,14 @@ def parse_arguments():
   parser.add_argument("--ped", type=int, default=0, help="ND has a 74 adc pedestal")
   parser.add_argument("--nd_only", action='store_true')
   parser.add_argument("--more_channels", action='store_true',
-    help='channels in ND image for ND drift length and FD drift length + for ND->FD downsampling info')
+    help="channels in ND image for ND drift length and FD drift length + for ND->FD downsampling info")
+  parser.add_argument("--segment_length", type=float, default=0.04,
+    help="segment length to chop tracks into [cm]")
 
   args = parser.parse_args()
 
   return (args.input_files, args.n, args.o, args.excluded_nums_file, args.vertices, args.ped,
-    args.nd_only, args.more_channels)
+    args.nd_only, args.more_channels, args.segment_length)
 
 if __name__ == '__main__':
   arguments = parse_arguments()
