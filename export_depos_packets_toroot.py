@@ -126,6 +126,16 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
       # Write depos
       for track in event_tracks:
         segments = track.segments(SEGMENT_LENGTH, equal_split=False)
+
+        # k_x = track.x_end - track.x_start
+        # k_y = track.y_end - track.y_start
+        # k_z = track.z_end - track.z_start
+
+        # import math
+        # line_length = math.sqrt(k_x**2 + k_y**2 + k_z**2)
+        # print(line_length, k_x, k_y, k_z, sep=' - ')
+        # print(track.dE)
+
         for segment in segments:
           depo = ROOT.vector("double")(12)
           depo[0] = track.trackid
