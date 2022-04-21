@@ -125,7 +125,7 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
 
       # Write depos
       for track in event_tracks:
-        segments = track.segments(SEGMENT_LENGTH)
+        segments = track.segments(SEGMENT_LENGTH, equal_split=False)
         for segment in segments:
           depo = ROOT.vector("double")(12)
           depo[0] = track.trackid
