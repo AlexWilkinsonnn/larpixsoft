@@ -10,7 +10,7 @@ from larpixsoft.geometry import get_geom_map
 from larpixsoft.funcs import get_events_vertex_cuts
 
 def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL, ND_ONLY, MORE_CHANNELS,
-  SEGMENT_LENGTH):
+  SEGMENT_LENGTH, FAKE_FLUCTUATIONS):
   detector = set_detector_properties('data/detector/ndlar-module.yaml', 
     'data/pixel_layout/multi_tile_layout-3.0.40.yaml', pedestal=PEDESTAL)
   geometry = get_geom_map('data/pixel_layout/multi_tile_layout-3.0.40.yaml')
@@ -125,7 +125,7 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
 
       # Write depos
       for track in event_tracks:
-        segments = track.segments(SEGMENT_LENGTH, equal_split=False)
+        segments = track.segments(SEGMENT_LENGTH, equal_split=False, fake_fluctuations=FAKE_FLUCTUATIONS)
 
         # k_x = track.x_end - track.x_start
         # k_y = track.y_end - track.y_start
@@ -137,6 +137,7 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
         # print(track.dE)
 
         for segment in segments:
+          print(segment['electrons'])
           depo = ROOT.vector("double")(12)
           depo[0] = track.trackid
           depo[1] = track.pdg
@@ -203,11 +204,12 @@ def parse_arguments():
     help="channels in ND image for ND drift length and FD drift length + for ND->FD downsampling info")
   parser.add_argument("--segment_length", type=float, default=0.04,
     help="segment length to chop tracks into [cm]")
+  parser.add_argument("--fake_fluctuations", action='store_true')
 
   args = parser.parse_args()
 
   return (args.input_files, args.n, args.o, args.excluded_nums_file, args.vertices, args.ped,
-    args.nd_only, args.more_channels, args.segment_length)
+    args.nd_only, args.more_channels, args.segment_length, args.fake_fluctuations)
 
 if __name__ == '__main__':
   arguments = parse_arguments()

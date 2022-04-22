@@ -1,4 +1,5 @@
 import math
+from scipy import stats
 
 from larpixsoft.detector import Detector
 
@@ -35,8 +36,8 @@ class Track():
     else:
       return super(Track, self).__hash__()
 
-  def segments(self, segment_length, equal_split=True, drift_time='none'):
-    if not equal_split and drift_time != 'none':
+  def segments(self, segment_length, equal_split=True, fake_fluctuations=False,  drift_time='none'):
+    if (not equal_split and drift_time != 'none') or (equal_split and fake_fluctuations):
       raise NotImplementedError
 
     segments = []
@@ -99,16 +100,28 @@ class Track():
           mid_factor = (n + 0.5) * step
           end_factor = (n + 1) * step
 
-          segment['electrons'] = round(self.electrons * step)
-          segment['dE'] = self.dE * step
+          if fake_fluctuations:
+            fluctuation_factor = max(0.1, min(stats.norm.rvs(loc=1.0, scale=0.1), 1.9))
+            segment['electrons'] = round(self.electrons * step * fluctuation_factor)
+            segment['dE'] = self.dE * step * fluctuation_factor
+
+          else:
+            segment['electrons'] = round(self.electrons * step)
+            segment['dE'] = self.dE * step
 
         elif n == N:
           start_factor = n * step
           mid_factor = (n * step) + (step_small * 0.5)
           end_factor = (n * step) + step_small
   
-          segment['electrons'] = round(self.electrons * step_small)
-          segment['dE'] = self.dE * step_small
+          if fake_fluctuations:
+            fluctuation_factor = max(0.1, min(stats.norm.rvs(loc=1.0, scale=0.1), 1.9))
+            segment['electrons'] = round(self.electrons * step_small * fluctuation_factor)
+            segment['dE'] = self.dE * step_small * fluctuation_factor
+
+          else:
+            segment['electrons'] = round(self.electrons * step_small)
+            segment['dE'] = self.dE * step_small
 
         segment['x_start'] = k_x * start_factor + self.x_start
         segment['y_start'] = k_y * start_factor + self.y_start
