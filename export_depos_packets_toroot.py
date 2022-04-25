@@ -137,7 +137,6 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
         # print(track.dE)
 
         for segment in segments:
-          print(segment['electrons'])
           depo = ROOT.vector("double")(12)
           depo[0] = track.trackid
           depo[1] = track.pdg
@@ -204,7 +203,8 @@ def parse_arguments():
     help="channels in ND image for ND drift length and FD drift length + for ND->FD downsampling info")
   parser.add_argument("--segment_length", type=float, default=0.04,
     help="segment length to chop tracks into [cm]")
-  parser.add_argument("--fake_fluctuations", action='store_true')
+  parser.add_argument("--fake_fluctuations", type=float, default=0.0, 
+    help="scale of Gaussian fluctuations if wanted")
 
   args = parser.parse_args()
 

@@ -36,7 +36,7 @@ class Track():
     else:
       return super(Track, self).__hash__()
 
-  def segments(self, segment_length, equal_split=True, fake_fluctuations=False,  drift_time='none'):
+  def segments(self, segment_length, equal_split=True, fake_fluctuations=0.0,  drift_time='none'):
     if (not equal_split and drift_time != 'none') or (equal_split and fake_fluctuations):
       raise NotImplementedError
 
@@ -101,7 +101,7 @@ class Track():
           end_factor = (n + 1) * step
 
           if fake_fluctuations:
-            fluctuation_factor = max(0.1, min(stats.norm.rvs(loc=1.0, scale=0.1), 1.9))
+            fluctuation_factor = max(0.1, min(stats.norm.rvs(loc=1.0, scale=fake_fluctuations), 1.9))
             segment['electrons'] = round(self.electrons * step * fluctuation_factor)
             segment['dE'] = self.dE * step * fluctuation_factor
 
@@ -115,7 +115,7 @@ class Track():
           end_factor = (n * step) + step_small
   
           if fake_fluctuations:
-            fluctuation_factor = max(0.1, min(stats.norm.rvs(loc=1.0, scale=0.1), 1.9))
+            fluctuation_factor = max(0.1, min(stats.norm.rvs(loc=1.0, scale=fake_fluctuations), 1.9))
             segment['electrons'] = round(self.electrons * step_small * fluctuation_factor)
             segment['dE'] = self.dE * step_small * fluctuation_factor
 
