@@ -89,7 +89,11 @@ class Track():
     # Split track into segments of length segment_length and a remainder with length < segment_length
     else:
       N = int(line_length // segment_length)
-      step = segment_length / line_length
+      try:
+        step = segment_length / line_length
+      except ZeroDivisionError:
+        print(N)
+        step = 0
       step_small = 1 - (step * N)
 
       for n in range(N + 1):
