@@ -24,11 +24,15 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT):
     id = event.eventid  
     vertex_z = event.vertex[2]
 
-    arrZ = np.zeros((4, 512, 4608))
-    arrU = np.zeros((4, 1024, 4608))
-    arrV = np.zeros((4, 1024, 4608))
+    arrZ = np.zeros((5, 512, 4608))
+    arrU = np.zeros((5, 1024, 4608))
+    arrV = np.zeros((5, 1024, 4608))
+    pixel_triggers = {} 
+
     for hit in event.projection:
-      z = hit[2]
+      x = round(hit[0], 4) # beam direction
+      y = round(hit[1], 4)
+      z = hit[2] # drift direction
       chZ = int(hit[3])
       tickZ = int(hit[4])
       chU = int(hit[5])
@@ -62,6 +66,14 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT):
       arrV[2, chV + 112, tickV + 58] += np.sqrt(fd_driftV)*adc
       if adc:
         arrV[3, chV + 112, tickV + 58] += 1
+
+      if (x, y) not in pixel_triggers:
+        pixel_triggers[(x, y)] = { 'Z' : (chZ, [tickZ]), 'U' : (chU, [tickU]), 'V' : (chV, [tickV]) }
+
+      else:
+        pixel_triggers[(x,y)]['Z'][1].append(tickZ)
+        pixel_triggers[(x,y)]['U'][1].append(tickU)
+        pixel_triggers[(x,y)]['V'][1].append(tickV)
     
     for i, j in zip(arrZ[1].nonzero()[0], arrZ[1].nonzero()[1]):
       if arrZ[0][i, j] != 0:
@@ -86,7 +98,29 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT):
     for i, j in zip(arrV[2].nonzero()[0], arrV[2].nonzero()[1]):
       if arrV[0][i, j] != 0:
         arrV[2][i, j] /= arrV[0][i, j]
-      
+
+    for pixel, trigger_data in pixel_triggers.items():
+      ticksZ = sorted(trigger_data['Z'][1])
+      first_triggersZ = [ tick for i, tick in enumerate(ticksZ) if i == 0 or tick - ticksZ[i - 1] > 15 ] 
+      for trigger_tick in first_triggersZ:
+        arrZ[4, trigger_data['Z'][0] + 16, trigger_tick + 58] += 1
+
+      ticksU = sorted(trigger_data['U'][1])
+      first_triggersU = [ tick for i, tick in enumerate(ticksU) if i == 0 or tick - ticksU[i - 1] > 15 ] 
+      for trigger_tick in first_triggersU:
+        arrU[4, trigger_data['U'][0] + 112, trigger_tick + 58] += 1
+
+      ticksV = sorted(trigger_data['V'][1])
+      first_triggersV = [ tick for i, tick in enumerate(ticksV) if i == 0 or tick - ticksV[i - 1] > 15 ] 
+      for trigger_tick in first_triggersV:
+        arrV[4, trigger_data['V'][0] + 112, trigger_tick + 58] += 1
+
+    print(arrV[3].max())
+    print(arrU[3].max())
+    print(arrZ[3].max())
+    print(arrV[4].max())
+    print(arrU[4].max())
+    print(arrZ[4].max())
     # Plotting for validation
     if PLOT:
       for name, arr in zip(["arrZ", "arrU", "arrV"], [arrZ[:, 16:-16, 58:-58], arrU[:, 16:-16, 112:-112], arrV[:, 16:-16, 112:-112]]):
