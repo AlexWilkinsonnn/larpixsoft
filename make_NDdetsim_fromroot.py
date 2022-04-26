@@ -4,6 +4,7 @@ import ROOT
 from matplotlib import pyplot as plt
 import numpy as np
 from tqdm import tqdm
+import sparse
 
 def main(INPUT_FILE, N, OUTPUT_DIR, PLOT):
   f = ROOT.TFile.Open(INPUT_FILE, "READ")
@@ -115,12 +116,6 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT):
       for trigger_tick in first_triggersV:
         arrV[4, trigger_data['V'][0] + 112, trigger_tick + 58] += 1
 
-    print(arrV[3].max())
-    print(arrU[3].max())
-    print(arrZ[3].max())
-    print(arrV[4].max())
-    print(arrU[4].max())
-    print(arrZ[4].max())
     # Plotting for validation
     if PLOT:
       for name, arr in zip(["arrZ", "arrU", "arrV"], [arrZ[:, 16:-16, 58:-58], arrU[:, 16:-16, 112:-112], arrV[:, 16:-16, 112:-112]]):
@@ -149,9 +144,13 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT):
         plt.colorbar()
         plt.show()
         
-    np.save(os.path.join(out_dir_Z, "ND_detsimZ_{}.npy".format(id)), arrZ)
-    np.save(os.path.join(out_dir_U, "ND_detsimU_{}.npy".format(id)), arrU)
-    np.save(os.path.join(out_dir_V, "ND_detsimV_{}.npy".format(id)), arrV)
+    SZ = sparse.COO.from_numpy(arrZ)
+    SU = sparse.COO.from_numpy(arrU)
+    SV = sparse.COO.from_numpy(arrV)
+
+    sparse.save_npz(os.path.join(out_dir_Z, "ND_detsimZ_sparse_{}.npz".format(id)), SZ)
+    sparse.save_npz(os.path.join(out_dir_U, "ND_detsimU_sparse_{}.npz".format(id)), SU)
+    sparse.save_npz(os.path.join(out_dir_V, "ND_detsimV_sparse_{}.npz".format(id)), SV)
 
 def parse_arguments():
   parser = argparse.ArgumentParser()
