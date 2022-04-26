@@ -92,7 +92,6 @@ class Track():
       try:
         step = segment_length / line_length
       except ZeroDivisionError:
-        print(N)
         step = 0
       step_small = 1 - (step * N)
 
