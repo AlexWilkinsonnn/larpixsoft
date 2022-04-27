@@ -124,6 +124,7 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
       # vertex_z.append(vertex[2])
 
       # Write depos
+      # total_e = 0
       for track in event_tracks:
         segments = track.segments(SEGMENT_LENGTH, equal_split=False, fake_fluctuations=FAKE_FLUCTUATIONS)
 
@@ -151,11 +152,13 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
           depo[10] = segment['electrons']
           depo[11] = segment['dE']
           depos.push_back(depo)
+          # total_e += segment['electrons']
           # depo_x.append(depo[2])
           # depo_y.append(depo[4])
           # depo_z.append(depo[6])
 
       # Wrtie packets
+      # total_ADC = 0
       for p in event_data_packets:
         packet = ROOT.vector("double")(6)
         packet[0] = p.x + p.anode.tpc_x
@@ -165,14 +168,18 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
         packet[4] = p.ADC 
         packet[5] = p.z() # nd drift length
         packets.push_back(packet)
+        # total_ADC += p.ADC
         # packet_x.append(packet[0])
         # packet_y.append(packet[1])
         # packet_z.append(packet[2])
 
-      # ax.scatter(vertex_x, vertex_y, vertex_z, label='vertex', marker='o')
-      # ax.scatter(depo_x, depo_y, depo_z, label='depo', marker='o')
-      # ax.scatter(packet_x, packet_y, packet_z, label='packet', marker='o')
-      # plt.show()
+      # if (total_e/total_ADC < 800 or total_e/total_ADC > 1200):
+      #   ax.scatter(vertex_x, vertex_y, vertex_z, label='vertex', marker='o')
+      #   ax.scatter(depo_x, depo_y, depo_z, label='depo', marker='o')
+      #   ax.scatter(packet_x, packet_y, packet_z, label='packet', marker='o')
+      #   plt.show()
+      # else:
+      #   plt.close()
 
       t.Fill()
 
