@@ -192,8 +192,7 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK):
                 plt.show()
 
         print(arrZ.shape, arrU.shape, arrV.shape)
-        sys.exit()
-                
+
         SZ = sparse.COO.from_numpy(arrZ)
         SU = sparse.COO.from_numpy(arrU)
         SV = sparse.COO.from_numpy(arrV)
