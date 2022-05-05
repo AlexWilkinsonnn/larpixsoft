@@ -78,14 +78,14 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK):
             arrU[2, chU + 112, tickU + 58] += np.sqrt(fd_driftU) * adc
             if adc:
                 arrU[3, chU + 112, tickU + 58] += 1
-            arrU[5, chU + 16, tickU + 58] += wire_distanceU * adc
+            arrU[5, chU + 112, tickU + 58] += wire_distanceU * adc
 
             arrV[0, chV + 112, tickV + 58] += adc
             arrV[1, chV + 112, tickV + 58] += np.sqrt(nd_drift) * adc
             arrV[2, chV + 112, tickV + 58] += np.sqrt(fd_driftV) * adc
             if adc:
                 arrV[3, chV + 112, tickV + 58] += 1
-            arrV[5, chV + 16, tickV + 58] += wire_distanceV * adc
+            arrV[5, chV + 112, tickV + 58] += wire_distanceV * adc
 
             if (x, y) not in pixel_triggers:
                 pixel_triggers[(x, y)] = { 
@@ -190,8 +190,6 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK):
                 plt.title("{} num packets".format(name))
                 plt.colorbar()
                 plt.show()
-
-        print(arrZ.shape, arrU.shape, arrV.shape)
 
         SZ = sparse.COO.from_numpy(arrZ)
         SU = sparse.COO.from_numpy(arrU)
