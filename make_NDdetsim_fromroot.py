@@ -156,8 +156,8 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK):
             maskV = get_nd_mask(arrV[0], 25, 2)
 
             maskZ = maskZ.astype(bool).astype(float)
-            maskU = maskZ.astype(bool).astype(float)
-            maskV = maskZ.astype(bool).astype(float)
+            maskU = maskU.astype(bool).astype(float)
+            maskV = maskV.astype(bool).astype(float)
 
             arrZ = np.concatenate((arrZ, np.expand_dims(maskZ, axis=0)), 0) 
             arrU = np.concatenate((arrU, np.expand_dims(maskU, axis=0)), 0) 
