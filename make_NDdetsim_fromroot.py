@@ -275,7 +275,7 @@ def parse_arguments():
 
     args = parser.parse_args()
 
-    return (args.input_file, args.n, args.o, args.plot, args.mask, args.onlyZ)
+    return (args.input_file, args.n, args.o, args.plot, args.mask, args.highResZ)
 
 if __name__ == '__main__':
     arguments = parse_arguments()
