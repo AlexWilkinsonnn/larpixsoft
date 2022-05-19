@@ -6,6 +6,63 @@ import numpy as np
 from tqdm import tqdm
 import sparse
 
+def get_high_res_Z(event, MASK):
+    arrZ = np.zeros((5, 1920, 44920))
+    pixel_triggers = {}
+
+    for hit in event.projection:
+        x = round(hit[0], 4) # beam direction
+        y = round(hit[1], 4)
+        z = hit[2] # drift direction
+        chZ = int(hit[3])
+        tickZ = int(hit[4])
+        chU = int(hit[5])
+        tickU = int(hit[6])
+        chV = int(hit[7])
+        tickV = int(hit[8])
+        adc = int(hit[9])
+        nd_drift = hit[10]
+        fd_driftZ = hit[11]
+        fd_driftU = hit[12]
+        fd_driftV = hit[13]
+        wire_distanceZ = hit[14]
+        wire_distanceU = hit[15]
+        wire_distanceV = hit[16]
+
+        arrZ[0, chZ, tickZ] += adc
+        arrZ[1, chZ, tickZ] += np.sqrt(nd_drift) * adc
+        arrZ[2, chZ, tickZ] += np.sqrt(fd_driftZ) * adc
+        if adc:
+            arrZ[3, chZ, tickZ] += 1
+
+        if (x, y) not in pixel_triggers:
+            pixel_triggers[(x, y)] = { 'Z' : (chZ, [tickZ]) }
+        else:
+            pixel_triggers[(x,y)]['Z'][1].append(tickZ)
+
+    for i, j in zip(arrZ[1].nonzero()[0], arrZ[1].nonzero()[1]):
+        if arrZ[0][i, j] != 0:
+            arrZ[1][i, j] /= arrZ[0][i, j]
+
+    for i, j in zip(arrZ[2].nonzero()[0], arrZ[2].nonzero()[1]):
+        if arrZ[0][i, j] != 0:
+            arrZ[2][i, j] /= arrZ[0][i, j]
+
+    for pixel, trigger_data in pixel_triggers.items():
+        ticksZ = sorted(trigger_data['Z'][1])
+        first_triggersZ = [ tick for i, tick in enumerate(ticksZ) if i == 0 or tick - ticksZ[i - 1] > 15 ] 
+        for trigger_tick in first_triggersZ:
+            arrZ[4, trigger_data['Z'][0], trigger_tick] += 1
+
+    if MASK:
+        maskZ = get_nd_mask(arrZ[0], 15, 1)
+
+        maskZ = maskZ.astype(bool).astype(float)
+
+        arrZ = np.concatenate((arrZ, np.expand_dims(maskZ, axis=0)), 0) 
+
+    return arrZ
+
 def get_nd_mask(arr_nd, max_tick_shift, max_ch_shift):
     nd_mask = np.copy(arr_nd)
 
@@ -19,7 +76,7 @@ def get_nd_mask(arr_nd, max_tick_shift, max_ch_shift):
 
     return nd_mask
 
-def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK):
+def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRESZ):
     f = ROOT.TFile.Open(INPUT_FILE, "READ")
     t = f.Get("IonAndScint/packet_projections")
     
@@ -37,6 +94,12 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK):
 
         id = event.eventid  
         vertex_z = event.vertex[2]
+
+        if HIGHRESZ:
+            arrZ = get_high_res_Z(event, MASK)
+            SZ = sparse.COO.from_numpy(arrZ)
+            sparse.save_npz(os.path.join(out_dir_Z, "ND_detsimZ_sparse_{}.npz".format(id)), SZ)
+            continue
 
         arrZ = np.zeros((6, 512, 4608))
         arrU = np.zeros((6, 1024, 4608))
@@ -205,13 +268,14 @@ def parse_arguments():
     parser.add_argument("input_file") 
 
     parser.add_argument("-n", type=int, default=0)
-    parser.add_argument("-o", type=str, default='', help='output folder name')
+    parser.add_argument("-o", type=str, default='', help="output folder name")
     parser.add_argument("--plot", action='store_true')
     parser.add_argument("--mask", action='store_true')
+    parser.add_argument("--highResZ", action='store_true', help="testing the high res Z")
 
     args = parser.parse_args()
 
-    return (args.input_file, args.n, args.o, args.plot, args.mask)
+    return (args.input_file, args.n, args.o, args.plot, args.mask, args.onlyZ)
 
 if __name__ == '__main__':
     arguments = parse_arguments()
