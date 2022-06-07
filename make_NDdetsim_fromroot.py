@@ -127,9 +127,11 @@ def get_high_res(event, MASK):
         print(maskZ.shape, maskZ.max(), maskZ.min())
         print(maskV.shape, maskV.max(), maskV.min())
 
-        # arrZ = np.concatenate((arrZ, np.expand_dims(maskZ, axis=0)), 0)
+        arrZ = np.concatenate((arrZ, np.expand_dims(maskZ, axis=0)), 0)
+        arrU = np.concatenate((arrU, np.expand_dims(maskU, axis=0)), 0)
+        arrV = np.concatenate((arrV, np.expand_dims(maskV, axis=0)), 0)
 
-    return arrZ
+    return arrZ, arrU, arrV
 
 def get_nd_mask(arr_nd, max_tick_shift, max_ch_shift):
     nd_mask = np.copy(arr_nd)
@@ -164,7 +166,9 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES):
         vertex_z = event.vertex[2]
 
         if HIGHRES:
-            arrZ, arrU, arrV= get_high_res_Z(event, MASK)
+            arrZ, arrU, arrV = get_high_res(event, MASK)
+
+            print(arrZ.shape, arrU.shape, arrV.shape)
 
             SZ = sparse.COO.from_numpy(arrZ)
             SU = sparse.COO.from_numpy(arrU)
@@ -347,7 +351,6 @@ def parse_arguments():
     parser.add_argument("--plot", action='store_true')
     parser.add_argument("--mask", action='store_true')
     parser.add_argument("--highRes", action='store_true', help="Use high resolution channel and tick (currently assume factors of 8 better wire and tick resolution")
-
     args = parser.parse_args()
 
     return (args.input_file, args.n, args.o, args.plot, args.mask, args.highRes)
