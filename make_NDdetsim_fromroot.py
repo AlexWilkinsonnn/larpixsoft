@@ -163,7 +163,7 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES):
         id = event.eventid
         vertex_z = event.vertex[2]
 
-        if HIGHRESZ:
+        if HIGHRES:
             arrZ, arrU, arrV= get_high_res_Z(event, MASK)
 
             SZ = sparse.COO.from_numpy(arrZ)
@@ -346,11 +346,11 @@ def parse_arguments():
     parser.add_argument("-o", type=str, default='', help="output folder name")
     parser.add_argument("--plot", action='store_true')
     parser.add_argument("--mask", action='store_true')
-    parser.add_argument("--highResZ", action='store_true', help="testing the high res Z")
+    parser.add_argument("--highRes", action='store_true', help="Use high resolution channel and tick (currently assume factors of 8 better wire and tick resolution")
 
     args = parser.parse_args()
 
-    return (args.input_file, args.n, args.o, args.plot, args.mask, args.highResZ)
+    return (args.input_file, args.n, args.o, args.plot, args.mask, args.highRes)
 
 if __name__ == '__main__':
     arguments = parse_arguments()
