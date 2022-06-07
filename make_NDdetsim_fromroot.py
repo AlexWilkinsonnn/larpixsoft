@@ -6,8 +6,10 @@ import numpy as np
 from tqdm import tqdm
 import sparse
 
-def get_high_res_Z(event, MASK):
-    arrZ = np.zeros((5, 1920, 44920))
+def get_high_res(event, MASK):
+    arrZ = np.zeros((5, 3840, 35936))
+    arrU = np.zeros((5, 6400, 35936))
+    arrV = np.zeros((5, 6400, 35936))
     pixel_triggers = {}
 
     for hit in event.projection:
@@ -35,10 +37,28 @@ def get_high_res_Z(event, MASK):
         if adc:
             arrZ[3, chZ, tickZ] += 1
 
+        arrU[0, chU, tickU] += adc
+        arrU[1, chU, tickU] += np.sqrt(nd_drift) * adc
+        arrU[2, chU, tickU] += np.sqrt(fd_driftU) * adc
+        if adc:
+            arrU[3, chU, tickU] += 1
+
+        arrV[0, chV, tickV] += adc
+        arrV[1, chV, tickV] += np.sqrt(nd_drift) * adc
+        arrV[2, chV, tickV] += np.sqrt(fd_driftV) * adc
+        if adc:
+            arrV[3, chV, tickV] += 1
+
         if (x, y) not in pixel_triggers:
-            pixel_triggers[(x, y)] = { 'Z' : (chZ, [tickZ]) }
+            pixel_triggers[(x, y)] = {
+                'Z' : (chZ, [tickZ]),
+                'U' : (chU, [tickU]),
+                'V' : (chV, [tickV]) }
+
         else:
             pixel_triggers[(x,y)]['Z'][1].append(tickZ)
+            pixel_triggers[(x,y)]['U'][1].append(tickU)
+            pixel_triggers[(x,y)]['V'][1].append(tickV)
 
     for i, j in zip(arrZ[1].nonzero()[0], arrZ[1].nonzero()[1]):
         if arrZ[0][i, j] != 0:
@@ -48,18 +68,66 @@ def get_high_res_Z(event, MASK):
         if arrZ[0][i, j] != 0:
             arrZ[2][i, j] /= arrZ[0][i, j]
 
+    for i, j in zip(arrU[1].nonzero()[0], arrU[1].nonzero()[1]):
+        if arrU[0][i, j] != 0:
+            arrU[1][i, j] /= arrU[0][i, j]
+
+    for i, j in zip(arrU[2].nonzero()[0], arrU[2].nonzero()[1]):
+        if arrU[0][i, j] != 0:
+            arrU[2][i, j] /= arrU[0][i, j]
+
+    for i, j in zip(arrV[1].nonzero()[0], arrV[1].nonzero()[1]):
+        if arrV[0][i, j] != 0:
+            arrV[1][i, j] /= arrV[0][i, j]
+
+    for i, j in zip(arrV[2].nonzero()[0], arrV[2].nonzero()[1]):
+        if arrV[0][i, j] != 0:
+            arrV[2][i, j] /= arrV[0][i, j]
+
     for pixel, trigger_data in pixel_triggers.items():
         ticksZ = sorted(trigger_data['Z'][1])
-        first_triggersZ = [ tick for i, tick in enumerate(ticksZ) if i == 0 or tick - ticksZ[i - 1] > 15 ] 
+        first_triggersZ = [ tick for i, tick in enumerate(ticksZ) if i == 0 or tick - ticksZ[i - 1] > 15 ]
         for trigger_tick in first_triggersZ:
             arrZ[4, trigger_data['Z'][0], trigger_tick] += 1
 
+        ticksU = sorted(trigger_data['U'][1])
+        first_triggersU = [ tick for i, tick in enumerate(ticksU) if i == 0 or tick - ticksU[i - 1] > 15 ]
+        for trigger_tick in first_triggersU:
+            arrU[4, trigger_data['U'][0], trigger_tick] += 1
+
+        ticksV = sorted(trigger_data['V'][1])
+        first_triggersV = [ tick for i, tick in enumerate(ticksV) if i == 0 or tick - ticksV[i - 1] > 15 ]
+        for trigger_tick in first_triggersV:
+            arrV[4, trigger_data['V'][0], trigger_tick] += 1
+
     if MASK:
-        maskZ = get_nd_mask(arrZ[0], 15, 1)
+        arrZ_downres = np.zeros((480, 4492))
+        arrU_downres = np.zeros((800, 4492))
+        arrV_downres = np.zeros((800, 4492))
+
+        for arr_downres in [arrZ_downres, arrU_downres, arrV_downres]:
+            for ch, ch_vec in enumerate(arr_downres):
+                for tick, adc in enumerate(ch_vec):
+                    arr_downres[int(ch/8), int(tick/8)] += adc
+            print(arr_downres.shape, arr_downres.max())
+
+        maskZ = get_nd_mask(arrZ_downres, 15, 1)
+        maskU = get_nd_mask(arrU_downres, 15, 1)
+        maskV = get_nd_mask(arrV_downres, 15, 1)
 
         maskZ = maskZ.astype(bool).astype(float)
+        maskU = maskU.astype(bool).astype(float)
+        maskV = maskV.astype(bool).astype(float)
 
-        arrZ = np.concatenate((arrZ, np.expand_dims(maskZ, axis=0)), 0) 
+        maskZ = np.pad(maskZ, ((0, 3360), (0, 31444)), mode='constant', constant_values=0)
+        maskU = np.pad(maskU, ((0, 5600), (0, 31444)), mode='constant', constant_values=0)
+        maskV = np.pad(maskV, ((0, 5600), (0, 31444)), mode='constant', constant_values=0)
+
+        print(maskZ.shape, maskZ.max(), maskZ.min())
+        print(maskZ.shape, maskZ.max(), maskZ.min())
+        print(maskV.shape, maskV.max(), maskV.min())
+
+        # arrZ = np.concatenate((arrZ, np.expand_dims(maskZ, axis=0)), 0)
 
     return arrZ
 
@@ -69,17 +137,17 @@ def get_nd_mask(arr_nd, max_tick_shift, max_ch_shift):
     for tick_shift in range(1, max_tick_shift + 1):
             nd_mask[:, tick_shift:] += arr_nd[:, :-tick_shift]
             nd_mask[:, :-tick_shift] += arr_nd[:, tick_shift:]
-        
+
     for ch_shift in range(1, max_ch_shift + 1):
             nd_mask[ch_shift:, :] += nd_mask[:-ch_shift, :]
             nd_mask[:-ch_shift, :] += nd_mask[ch_shift:, :]
 
     return nd_mask
 
-def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRESZ):
+def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES):
     f = ROOT.TFile.Open(INPUT_FILE, "READ")
     t = f.Get("IonAndScint/packet_projections")
-    
+
     out_dir_Z = os.path.join(OUTPUT_DIR, 'Z')
     out_dir_U = os.path.join(OUTPUT_DIR, 'U')
     out_dir_V = os.path.join(OUTPUT_DIR, 'V')
@@ -92,19 +160,26 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRESZ):
         if N and i >= N:
             break
 
-        id = event.eventid  
+        id = event.eventid
         vertex_z = event.vertex[2]
 
         if HIGHRESZ:
-            arrZ = get_high_res_Z(event, MASK)
+            arrZ, arrU, arrV= get_high_res_Z(event, MASK)
+
             SZ = sparse.COO.from_numpy(arrZ)
+            SU = sparse.COO.from_numpy(arrU)
+            SV = sparse.COO.from_numpy(arrV)
+
             sparse.save_npz(os.path.join(out_dir_Z, "ND_detsimZ_sparse_{}.npz".format(id)), SZ)
+            sparse.save_npz(os.path.join(out_dir_U, "ND_detsimU_sparse_{}.npz".format(id)), SU)
+            sparse.save_npz(os.path.join(out_dir_V, "ND_detsimV_sparse_{}.npz".format(id)), SV)
+
             continue
 
         arrZ = np.zeros((6, 512, 4608))
         arrU = np.zeros((6, 1024, 4608))
         arrV = np.zeros((6, 1024, 4608))
-        pixel_triggers = {} 
+        pixel_triggers = {}
 
         for hit in event.projection:
             x = round(hit[0], 4) # beam direction
@@ -151,7 +226,7 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRESZ):
             arrV[5, chV + 112, tickV + 58] += wire_distanceV * adc
 
             if (x, y) not in pixel_triggers:
-                pixel_triggers[(x, y)] = { 
+                pixel_triggers[(x, y)] = {
                     'Z' : (chZ, [tickZ]),
                     'U' : (chU, [tickU]),
                     'V' : (chV, [tickV]) }
@@ -160,7 +235,7 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRESZ):
                 pixel_triggers[(x,y)]['Z'][1].append(tickZ)
                 pixel_triggers[(x,y)]['U'][1].append(tickU)
                 pixel_triggers[(x,y)]['V'][1].append(tickV)
-        
+
         for i, j in zip(arrZ[1].nonzero()[0], arrZ[1].nonzero()[1]):
             if arrZ[0][i, j] != 0:
                 arrZ[1][i, j] /= arrZ[0][i, j]
@@ -199,17 +274,17 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRESZ):
 
         for pixel, trigger_data in pixel_triggers.items():
             ticksZ = sorted(trigger_data['Z'][1])
-            first_triggersZ = [ tick for i, tick in enumerate(ticksZ) if i == 0 or tick - ticksZ[i - 1] > 15 ] 
+            first_triggersZ = [ tick for i, tick in enumerate(ticksZ) if i == 0 or tick - ticksZ[i - 1] > 15 ]
             for trigger_tick in first_triggersZ:
                 arrZ[4, trigger_data['Z'][0] + 16, trigger_tick + 58] += 1
 
             ticksU = sorted(trigger_data['U'][1])
-            first_triggersU = [ tick for i, tick in enumerate(ticksU) if i == 0 or tick - ticksU[i - 1] > 15 ] 
+            first_triggersU = [ tick for i, tick in enumerate(ticksU) if i == 0 or tick - ticksU[i - 1] > 15 ]
             for trigger_tick in first_triggersU:
                 arrU[4, trigger_data['U'][0] + 112, trigger_tick + 58] += 1
 
             ticksV = sorted(trigger_data['V'][1])
-            first_triggersV = [ tick for i, tick in enumerate(ticksV) if i == 0 or tick - ticksV[i - 1] > 15 ] 
+            first_triggersV = [ tick for i, tick in enumerate(ticksV) if i == 0 or tick - ticksV[i - 1] > 15 ]
             for trigger_tick in first_triggersV:
                 arrV[4, trigger_data['V'][0] + 112, trigger_tick + 58] += 1
 
@@ -222,9 +297,9 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRESZ):
             maskU = maskU.astype(bool).astype(float)
             maskV = maskV.astype(bool).astype(float)
 
-            arrZ = np.concatenate((arrZ, np.expand_dims(maskZ, axis=0)), 0) 
-            arrU = np.concatenate((arrU, np.expand_dims(maskU, axis=0)), 0) 
-            arrV = np.concatenate((arrV, np.expand_dims(maskV, axis=0)), 0) 
+            arrZ = np.concatenate((arrZ, np.expand_dims(maskZ, axis=0)), 0)
+            arrU = np.concatenate((arrU, np.expand_dims(maskU, axis=0)), 0)
+            arrV = np.concatenate((arrV, np.expand_dims(maskV, axis=0)), 0)
 
         # Plotting for validation
         if PLOT:
@@ -265,7 +340,7 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRESZ):
 def parse_arguments():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("input_file") 
+    parser.add_argument("input_file")
 
     parser.add_argument("-n", type=int, default=0)
     parser.add_argument("-o", type=str, default='', help="output folder name")
