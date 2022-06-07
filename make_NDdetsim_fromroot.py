@@ -1,4 +1,4 @@
-import os, argparse
+import os, argparse, time
 
 import ROOT
 from matplotlib import pyplot as plt
@@ -7,10 +7,14 @@ from tqdm import tqdm
 import sparse
 
 def get_high_res(event, MASK):
-    arrZ = np.zeros((5, 3840, 35936))
-    arrU = np.zeros((5, 6400, 35936))
-    arrV = np.zeros((5, 6400, 35936))
+    arrZ = np.zeros((6, 3840, 35936))
+    arrU = np.zeros((6, 6400, 35936))
+    arrV = np.zeros((6, 6400, 35936))
     pixel_triggers = {}
+
+    nonzero_indicesZ = set()
+    nonzero_indicesU = set()
+    nonzero_indicesV = set()
 
     for hit in event.projection:
         x = round(hit[0], 4) # beam direction
@@ -31,18 +35,21 @@ def get_high_res(event, MASK):
         wire_distanceU = hit[15]
         wire_distanceV = hit[16]
 
+        nonzero_indicesZ.add((chZ, tickZ))
         arrZ[0, chZ, tickZ] += adc
         arrZ[1, chZ, tickZ] += np.sqrt(nd_drift) * adc
         arrZ[2, chZ, tickZ] += np.sqrt(fd_driftZ) * adc
         if adc:
             arrZ[3, chZ, tickZ] += 1
 
+        nonzero_indicesU.add((chU, tickU))
         arrU[0, chU, tickU] += adc
         arrU[1, chU, tickU] += np.sqrt(nd_drift) * adc
         arrU[2, chU, tickU] += np.sqrt(fd_driftU) * adc
         if adc:
             arrU[3, chU, tickU] += 1
 
+        nonzero_indicesV.add((chV, tickV))
         arrV[0, chV, tickV] += adc
         arrV[1, chV, tickV] += np.sqrt(nd_drift) * adc
         arrV[2, chV, tickV] += np.sqrt(fd_driftV) * adc
@@ -60,27 +67,27 @@ def get_high_res(event, MASK):
             pixel_triggers[(x,y)]['U'][1].append(tickU)
             pixel_triggers[(x,y)]['V'][1].append(tickV)
 
-    for i, j in zip(arrZ[1].nonzero()[0], arrZ[1].nonzero()[1]):
+    for i, j in nonzero_indicesZ:
         if arrZ[0][i, j] != 0:
             arrZ[1][i, j] /= arrZ[0][i, j]
 
-    for i, j in zip(arrZ[2].nonzero()[0], arrZ[2].nonzero()[1]):
+    for i, j in nonzero_indicesZ:
         if arrZ[0][i, j] != 0:
             arrZ[2][i, j] /= arrZ[0][i, j]
 
-    for i, j in zip(arrU[1].nonzero()[0], arrU[1].nonzero()[1]):
+    for i, j in nonzero_indicesU:
         if arrU[0][i, j] != 0:
             arrU[1][i, j] /= arrU[0][i, j]
 
-    for i, j in zip(arrU[2].nonzero()[0], arrU[2].nonzero()[1]):
+    for i, j in nonzero_indicesU:
         if arrU[0][i, j] != 0:
             arrU[2][i, j] /= arrU[0][i, j]
 
-    for i, j in zip(arrV[1].nonzero()[0], arrV[1].nonzero()[1]):
+    for i, j in nonzero_indicesV:
         if arrV[0][i, j] != 0:
             arrV[1][i, j] /= arrV[0][i, j]
 
-    for i, j in zip(arrV[2].nonzero()[0], arrV[2].nonzero()[1]):
+    for i, j in nonzero_indicesV:
         if arrV[0][i, j] != 0:
             arrV[2][i, j] /= arrV[0][i, j]
 
@@ -105,11 +112,11 @@ def get_high_res(event, MASK):
         arrU_downres = np.zeros((800, 4492))
         arrV_downres = np.zeros((800, 4492))
 
-        for arr_downres in [arrZ_downres, arrU_downres, arrV_downres]:
-            for ch, ch_vec in enumerate(arr_downres):
-                for tick, adc in enumerate(ch_vec):
-                    arr_downres[int(ch/8), int(tick/8)] += adc
-            print(arr_downres.shape, arr_downres.max())
+        start = time.time()
+
+        for arr, arr_nonzero_indices, arr_downres in zip([arrZ[0], arrU[0], arrV[0]], [nonzero_indicesZ, nonzero_indicesU, nonzero_indicesV], [arrZ_downres, arrU_downres, arrV_downres]):
+            for ch, tick in arr_nonzero_indices:
+                arr_downres[int(ch/8), int(tick/8)] += arr[ch, tick]
 
         maskZ = get_nd_mask(arrZ_downres, 15, 1)
         maskU = get_nd_mask(arrU_downres, 15, 1)
@@ -123,13 +130,18 @@ def get_high_res(event, MASK):
         maskU = np.pad(maskU, ((0, 5600), (0, 31444)), mode='constant', constant_values=0)
         maskV = np.pad(maskV, ((0, 5600), (0, 31444)), mode='constant', constant_values=0)
 
-        print(maskZ.shape, maskZ.max(), maskZ.min())
-        print(maskZ.shape, maskZ.max(), maskZ.min())
-        print(maskV.shape, maskV.max(), maskV.min())
+        maskZ_nonzero = maskZ.nonzero()
+        maskU_nonzero = maskU.nonzero()
+        maskV_nonzero = maskV.nonzero()
 
-        arrZ = np.concatenate((arrZ, np.expand_dims(maskZ, axis=0)), 0)
-        arrU = np.concatenate((arrU, np.expand_dims(maskU, axis=0)), 0)
-        arrV = np.concatenate((arrV, np.expand_dims(maskV, axis=0)), 0)
+        for i, j in zip(maskZ_nonzero[0], maskZ_nonzero[1]):
+            arrZ[5, i, j] = maskZ[i, j]
+
+        for i, j in zip(maskU_nonzero[0], maskU_nonzero[1]):
+            arrU[5, i, j] = maskU[i, j]
+
+        for i, j in zip(maskV_nonzero[0], maskV_nonzero[1]):
+            arrV[5, i, j] = maskV[i, j]
 
     return arrZ, arrU, arrV
 
@@ -146,7 +158,7 @@ def get_nd_mask(arr_nd, max_tick_shift, max_ch_shift):
 
     return nd_mask
 
-def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES):
+def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
     f = ROOT.TFile.Open(INPUT_FILE, "READ")
     t = f.Get("IonAndScint/packet_projections")
 
@@ -159,7 +171,9 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES):
 
     tree_len = N if N else t.GetEntries()
     for i, event in enumerate(tqdm(t, total=tree_len)):
-        if N and i >= N:
+        if i < START_I:
+            continue
+        if N and i >= N + START_I:
             break
 
         id = event.eventid
@@ -167,8 +181,6 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES):
 
         if HIGHRES:
             arrZ, arrU, arrV = get_high_res(event, MASK)
-
-            print(arrZ.shape, arrU.shape, arrV.shape)
 
             SZ = sparse.COO.from_numpy(arrZ)
             SU = sparse.COO.from_numpy(arrU)
@@ -347,13 +359,14 @@ def parse_arguments():
     parser.add_argument("input_file")
 
     parser.add_argument("-n", type=int, default=0)
+    parser.add_argument("-i", type=int, default=0, help="starting index to allow for parallel processes")
     parser.add_argument("-o", type=str, default='', help="output folder name")
     parser.add_argument("--plot", action='store_true')
     parser.add_argument("--mask", action='store_true')
     parser.add_argument("--highRes", action='store_true', help="Use high resolution channel and tick (currently assume factors of 8 better wire and tick resolution")
     args = parser.parse_args()
 
-    return (args.input_file, args.n, args.o, args.plot, args.mask, args.highRes)
+    return (args.input_file, args.n, args.o, args.plot, args.mask, args.highRes, args.i)
 
 if __name__ == '__main__':
     arguments = parse_arguments()
