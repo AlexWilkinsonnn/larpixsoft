@@ -183,11 +183,9 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
       n_passed += 1
       num += 1
 
-    print("[{}/{}] - {} passed cuts: {} failed adc cut {} failed get_events".format(
-      len(data_packets), len(data_packets), n_passed, n_adc_failed, n_assns_failed))  
+    print("[{}/{}] - {} passed cuts: {} failed adc cut {} failed get_events".format(len(data_packets), len(data_packets), n_passed, n_adc_failed, n_assns_failed))  
 
-  print("{} passed cuts : {} failed adc_cut {} failed get_events".format(
-    n_passed, n_adc_failed, n_assns_failed))
+  print("{} passed cuts : {} failed adc_cut {} failed get_events".format(n_passed, n_adc_failed, n_assns_failed))
 
   f_ROOT.Write()
   f_ROOT.Close()
