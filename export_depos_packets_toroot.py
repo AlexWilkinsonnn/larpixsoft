@@ -200,7 +200,6 @@ def parse_arguments():
   parser.add_argument("--excluded_nums_file", type=str, default='')
   parser.add_argument("--vertices", type=str, default='')
   parser.add_argument("--ped", type=int, default=0, help="ND has a 74 adc pedestal")
-    help="channels in ND image for ND drift length and FD drift length + for ND->FD downsampling info")
   parser.add_argument("--segment_length", type=float, default=0.04,
     help="segment length to chop tracks into [cm]")
   parser.add_argument("--fake_fluctuations", type=float, default=0.0, 
