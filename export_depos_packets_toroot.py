@@ -9,10 +9,8 @@ from larpixsoft.geometry import get_geom_map
 
 from larpixsoft.funcs import get_events_vertex_cuts
 
-def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL, ND_ONLY, MORE_CHANNELS,
-  SEGMENT_LENGTH, FAKE_FLUCTUATIONS):
-  detector = set_detector_properties('data/detector/ndlar-module.yaml', 
-    'data/pixel_layout/multi_tile_layout-3.0.40.yaml', pedestal=PEDESTAL)
+def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTAL, SEGMENT_LENGTH, FAKE_FLUCTUATIONS):
+  detector = set_detector_properties('data/detector/ndlar-module.yaml', 'data/pixel_layout/multi_tile_layout-3.0.40.yaml', pedestal=PEDESTAL)
   geometry = get_geom_map('data/pixel_layout/multi_tile_layout-3.0.40.yaml')
 
   pitchZ = 0.479
@@ -63,8 +61,7 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
     #   geometry, detector, N=N, x_min_max=((479.7605 + 5*pitch), (709.92 - 5*pitch))) 
 
     for i, (event_data_packets, event_tracks, vertex) in enumerate(zip(data_packets, tracks, file_vertices)):
-      print("[{}/{}] - {} passed cuts: {} failed adc cut {} failed get_events".format(
-        i + 1, len(data_packets), n_passed, n_adc_failed, n_assns_failed), end='\r', flush=True)
+      print("[{}/{}] - {} passed cuts: {} failed adc cut {} failed get_events".format(i + 1, len(data_packets), n_passed, n_adc_failed, n_assns_failed), end='\r', flush=True)
 
       depos.clear()
       packets.clear()
@@ -201,12 +198,10 @@ def parse_arguments():
   parser.add_argument("input_files", nargs='+')
 
   parser.add_argument("-n", type=int, default=0)
-  parser.add_argument("-o", type=str, default='', help='output root file name')
+  parser.add_argument("-o", type=str, default='', help="output root file name")
   parser.add_argument("--excluded_nums_file", type=str, default='')
   parser.add_argument("--vertices", type=str, default='')
   parser.add_argument("--ped", type=int, default=0, help="ND has a 74 adc pedestal")
-  parser.add_argument("--nd_only", action='store_true')
-  parser.add_argument("--more_channels", action='store_true',
     help="channels in ND image for ND drift length and FD drift length + for ND->FD downsampling info")
   parser.add_argument("--segment_length", type=float, default=0.04,
     help="segment length to chop tracks into [cm]")
