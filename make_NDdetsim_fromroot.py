@@ -119,8 +119,8 @@ def get_high_res(event, MASK):
                 arr_downres[int(ch/8), int(tick/8)] += arr[ch, tick]
 
         maskZ = get_nd_mask(arrZ_downres, 15, 1)
-        maskU = get_nd_mask(arrU_downres, 15, 1)
-        maskV = get_nd_mask(arrV_downres, 15, 1)
+        maskU = get_nd_mask(arrU_downres, 25, 2)
+        maskV = get_nd_mask(arrV_downres, 25, 2)
 
         maskZ = maskZ.astype(bool).astype(float)
         maskU = maskU.astype(bool).astype(float)
