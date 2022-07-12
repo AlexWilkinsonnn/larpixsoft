@@ -3,7 +3,7 @@ import yaml
 
 def get_geom_map(pixel_file):
   """
-  Returns map from electronics readout channels to x,y pixel position on the anode. 
+  Returns map from electronics readout channels to x,y pixel position on the anode.
   geometry yaml: pixel layout yaml (multi_tile_layout-3.0.40.yaml for ND LAr)
   """
   with open(pixel_file) as pf:
