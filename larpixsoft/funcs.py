@@ -20,9 +20,10 @@ def get_events_no_cuts(packets, mc_packets_assn, tracks, geometry, detector):
     event_tracks = set()
     event_data_packets = []
 
+    cnt = 0
     for i, packet in enumerate(packets):
         if packet['packet_type'] == 7 and event_data_packets: # End of packet for current trigger.
-            data_packets.append(list(event_data_packets))
+            data_packets.append(list(event_data_packets)) # Explicit list to copy
             my_tracks.append(list(event_tracks))
 
             event_tracks.clear()
@@ -40,6 +41,10 @@ def get_events_no_cuts(packets, mc_packets_assn, tracks, geometry, detector):
             for id in track_ids:
                 track = Track(tracks[id], detector, id)
                 event_tracks.add(track)
+    
+    if event_data_packets:
+        data_packets.append(list(event_data_packets))
+        my_tracks.append(list(event_tracks))
 
     return data_packets, my_tracks
 
