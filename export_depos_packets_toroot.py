@@ -137,20 +137,20 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
 
             vertex = vertices[id]
 
-            fig = plt.figure()
-            ax = fig.add_subplot(projection='3d')
-            vertex_x, vertex_y, vertex_z = [], [], []
-            depo_x, depo_y, depo_z = [], [], []
-            packet_x, packet_y, packet_z = [], [], []
+            # fig = plt.figure()
+            # ax = fig.add_subplot(projection='3d')
+            # vertex_x, vertex_y, vertex_z = [], [], []
+            # depo_x, depo_y, depo_z = [], [], []
+            # packet_x, packet_y, packet_z = [], [], []
 
             # Write vertex info
             vertex_info[0] = vertex[0] # x
             vertex_info[1] = vertex[1] # y
             vertex_info[2] = vertex[2] # z
             vertex_info[3] = vertex[3] # t
-            vertex_x.append(vertex[0])
-            vertex_y.append(vertex[1])
-            vertex_z.append(vertex[2])
+            # vertex_x.append(vertex[0])
+            # vertex_y.append(vertex[1])
+            # vertex_z.append(vertex[2])
 
             # Write depos
             total_e = 0
@@ -181,10 +181,10 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
                     depo[10] = segment['electrons']
                     depo[11] = segment['dE']
                     depos.push_back(depo)
-                    total_e += segment['electrons']
-                    depo_x.append(depo[2])
-                    depo_y.append(depo[4])
-                    depo_z.append(depo[6])
+                    # total_e += segment['electrons']
+                    # depo_x.append(depo[2])
+                    # depo_y.append(depo[4])
+                    # depo_z.append(depo[6])
 
             # Wrtie packets
             total_ADC = 0
@@ -197,21 +197,21 @@ def main(INPUT_FILES, N, OUTPUT_NAME, EXCLUDED_NUMS_FILE, VERTICES_FILE, PEDESTA
                 packet[4] = p.ADC
                 packet[5] = p.z() # nd drift length
                 packets.push_back(packet)
-                total_ADC += p.ADC
-                packet_x.append(packet[0])
-                packet_y.append(packet[1])
-                packet_z.append(packet[2])
+                # total_ADC += p.ADC
+                # packet_x.append(packet[0])
+                # packet_y.append(packet[1])
+                # packet_z.append(packet[2])
 
             # if (total_e/total_ADC < 800 or total_e/total_ADC > 1200):
-            if True:
-                ax.scatter(vertex_x, vertex_y, vertex_z, label='vertex', marker='o', s=40)
-                ax.scatter(depo_x, depo_y, depo_z, label='depo', marker='o')
-                ax.scatter(packet_x, packet_y, packet_z, label='packet', marker='o')
-                plt.legend()
-                # plt.show()
-                plt.close()
-            else:
-                plt.close()
+            # if True:
+            #     ax.scatter(vertex_x, vertex_y, vertex_z, label='vertex', marker='o', s=40)
+            #     ax.scatter(depo_x, depo_y, depo_z, label='depo', marker='o')
+            #     ax.scatter(packet_x, packet_y, packet_z, label='packet', marker='o')
+            #     plt.legend()
+            #     # plt.show()
+            #     plt.close()
+            # else:
+            #     plt.close()
 
             t.Fill()
 
