@@ -16,7 +16,6 @@ def main(INPUT_FILE, PRINT_DETECTORS, DETECTORS):
         return
 
     dummyDetector = Detector()
-    # depos_x, depos_y, depos_z = [], [], []
     for vertex in edep_data['vertices']:
         eventID = vertex['eventID']
 
@@ -38,7 +37,6 @@ def main(INPUT_FILE, PRINT_DETECTORS, DETECTORS):
         ax.set_prop_cycle(color=[ cmap(i) for i in range(len(segment_keys)) ])
 
         for key in segment_keys:
-            # depos_x, depos_y, depos_z = [], [], []
             colour = ''
             for iSegment, segment in enumerate(edep_data[key][edep_data[key]['eventID'] == eventID]):
                 if iSegment == 0:
@@ -53,18 +51,6 @@ def main(INPUT_FILE, PRINT_DETECTORS, DETECTORS):
                         (segment['z_start'], segment['z_end']),
                         zs=(segment['y_start'], segment['y_end']), c=colour)
 
-                # track = Track(segment, dummyDetector)
-                # small_segments = track.segments(0.04)
-                # for small_segment in small_segments:
-                #     depos_x.append(small_segment['x'])
-                #     depos_y.append(small_segment['y'])
-                #     depos_z.append(small_segment['z'])
-
-            # ax.scatter(depos_x, depos_z, depos_y, marker='o', s=8, label=key.split('segments_')[1])
-
-        # xlims = (438.04, 892.36)
-        # ylims = (-133.413, 140.187)
-        # zlims = (-356.7, 356.7)
         xlims = (413.72, 916.68)
         ylims = (-148.613, 155.387)
         zlims = (-356.7, 356.7)
@@ -92,6 +78,7 @@ def main(INPUT_FILE, PRINT_DETECTORS, DETECTORS):
         ax.set_zlim(ylims[0] - 50, ylims[1] + 50)
 
         plt.legend(loc='lower left')
+        fig.tight_layout()
         plt.show()
 
 def parse_arguments():
