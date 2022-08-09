@@ -47,6 +47,9 @@ def main(INPUT_FILE, PRINT_DETECTORS, DETECTORS):
                     colour = track[0].get_color()
                     continue
 
+                # if segment['dx'] > 0.401:
+                #     print(segment['dx'])
+
                 ax.plot((segment['x_start'], segment['x_end']),
                         (segment['z_start'], segment['z_end']),
                         zs=(segment['y_start'], segment['y_end']), c=colour)
