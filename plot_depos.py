@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from larpixsoft.track import Track
 from larpixsoft.detector import Detector
 
-def main(INPUT_FILE, PRINT_DETECTORS, DETECTORS):
+def main(INPUT_FILE, PRINT_DETECTORS, DETECTORS, SINGLE_SEGMENT_DSET):
     edep_data = h5py.File(INPUT_FILE)
     segment_keys = [ key for key in edep_data.keys() if key.startswith('segments_') ]
 
@@ -36,22 +36,27 @@ def main(INPUT_FILE, PRINT_DETECTORS, DETECTORS):
         cmap = plt.cm.Set1
         ax.set_prop_cycle(color=[ cmap(i) for i in range(len(segment_keys)) ])
 
+        if SINGLE_SEGMENT_DSET:
+            segment_keys = (SINGLE_SEGMENT_DSET,)
+            ax.set_prop_cycle(color=[cmap(0)])
+
         for key in segment_keys:
             colour = ''
             for iSegment, segment in enumerate(edep_data[key][edep_data[key]['eventID'] == eventID]):
                 if iSegment == 0:
-                    track = ax.plot((segment['x_start'], segment['x_end']),
-                                    (segment['z_start'], segment['z_end']),
-                                    zs=(segment['y_start'], segment['y_end']),
-                                    label=key.split('segments_')[1])
+                    # Sometimes need to ensure nonzero \Delta to plot for short StepLimit edep-sim
+                    track = ax.plot((segment['x_start'], segment['x_end']), \
+                                    (segment['z_start'], segment['z_end']), \
+                                    zs=(segment['y_start'], segment['y_end']), \
+                                    label=key.split('segments_')[1] if not SINGLE_SEGMENT_DSET else '_')
                     colour = track[0].get_color()
                     continue
 
                 # if segment['dx'] > 0.401:
                 #     print(segment['dx'])
 
-                ax.plot((segment['x_start'], segment['x_end']),
-                        (segment['z_start'], segment['z_end']),
+                ax.plot((segment['x_start'], segment['x_end']), \
+                        (segment['z_start'], segment['z_end']), \
                         zs=(segment['y_start'], segment['y_end']), c=colour)
 
         xlims = (413.72, 916.68)
@@ -89,14 +94,16 @@ def parse_arguments():
 
     parser.add_argument("input_file")
 
-    parser.add_argument("--print_detectors", action='store_true',
+    parser.add_argument("--print_detectors", action='store_true', \
         help="print available detectors and exit")
-    parser.add_argument("-d", "--detectors", default=[], help="comma delimited list",
+    parser.add_argument("--single_segment_dset", type=str, default='', \
+        help="input file has a single semgment dataset with this name" )
+    parser.add_argument("-d", "--detectors", default=[], help="comma delimited list", \
         type=lambda dets: [ det for det in dets.split(',') ])
 
     args = parser.parse_args()
 
-    return (args.input_file, args.print_detectors, args.detectors)
+    return (args.input_file, args.print_detectors, args.detectors, args.single_segment_dset)
 
 if __name__ == '__main__':
     arguments = parse_arguments()
