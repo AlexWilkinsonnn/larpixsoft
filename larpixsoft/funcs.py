@@ -15,19 +15,23 @@ def get_wires(pitch, x_start):
     return wires
 
 def get_events_no_cuts(packets, mc_packets_assn, tracks, geometry, detector):
-    my_tracks = []
     data_packets = []
 
-    event_tracks = set()
     event_data_packets = []
+    event_ids = []
 
     cnt = 0
     for i, packet in enumerate(tqdm(packets)):
         if packet['packet_type'] == 7 and event_data_packets: # End of packet for current trigger.
             data_packets.append(list(event_data_packets)) # Explicit list to copy
-            my_tracks.append(list(event_tracks))
 
-            event_tracks.clear()
+            # Get eventID of packets
+            for packet in event_data_packets:
+                track_ids = [ id for id in mc_packets_assn[packet.objectid][0] if id != -1 ]
+                if track_ids:
+                    event_ids.append(tracks[track_ids[0]]['eventID'])
+                    break
+
             event_data_packets.clear()
 
         elif packet['packet_type'] == 7: # Start of new trigger.
@@ -38,14 +42,33 @@ def get_events_no_cuts(packets, mc_packets_assn, tracks, geometry, detector):
             p.add_trigger(trigger)
             event_data_packets.append(p)
 
-            track_ids = [ id for id in mc_packets_assn[i][0] if id != -1 ]
-            for id in track_ids:
-                track = Track(tracks[id], detector, id)
-                event_tracks.add(track)
-
     if event_data_packets:
         data_packets.append(list(event_data_packets))
-        my_tracks.append(list(event_tracks))
+
+        for packet in event_data_packets:
+            track_ids = [ id for id in mc_packets_assn[packet.objectid][0] if id != -1 ]
+            if track_ids:
+                event_ids.append(tracks[track_ids[0]]['eventID'])
+                break
+
+    if len(data_packets) != len(event_ids):
+        raise Exception("bruh")
+
+    x_max, y_max, z_max = np.max(np.max(detector.tpc_borders, 2), 0)
+    x_min, y_min, z_min = np.min(np.min(detector.tpc_borders, 2), 0)
+
+    my_tracks = [ [] for _ in range(len(data_packets)) ]
+
+    for itrack, track in enumerate(tqdm(tracks)):
+        track_obj = Track(track, detector, itrack)
+
+        if (not track_obj.active_volume and \
+            (track_obj.x > x_max or track_obj.x < x_min) or \
+            (track_obj.y > y_max or track_obj.y < y_min) or \
+            (track_obj.z > z_max or track_obj.z < z_min)):
+            continue
+
+        my_tracks[event_ids.index(track_obj.eventid)].append(track_obj)
 
     return data_packets, my_tracks
 

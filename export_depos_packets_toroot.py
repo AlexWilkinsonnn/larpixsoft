@@ -68,7 +68,7 @@ def main(INPUT_FILES, OUTPUT_NAME, PLOT):
             # Write depos
             total_e = 0
             for track in event_tracks:
-                depo = ROOT.vector("double")(12)
+                depo = ROOT.vector("double")(13)
                 depo[0] = track.trackid
                 depo[1] = track.pdg
                 depo[2] = track.x_start
@@ -81,17 +81,19 @@ def main(INPUT_FILES, OUTPUT_NAME, PLOT):
                 depo[9] = track.t_end
                 depo[10] = track.electrons
                 depo[11] = track.dE
+                depo[12] = 1.0 if track.active_volume else -1.0
                 depos.push_back(depo)
 
             # Wrtie packets
             for p in event_data_packets:
-                packet = ROOT.vector("double")(6)
+                packet = ROOT.vector("double")(7)
                 packet[0] = p.x + p.anode.tpc_x
                 packet[1] = p.y + p.anode.tpc_y
                 packet[2] = p.z_global()
                 packet[3] = p.t()
                 packet[4] = p.ADC
                 packet[5] = p.z() # nd drift length
+                packet[6] = p.x # nd module x for knowledge of when approacing edge of module
                 packets.push_back(packet)
 
             if PLOT:
@@ -109,6 +111,7 @@ def main(INPUT_FILES, OUTPUT_NAME, PLOT):
                     packet_y.append(p.y + p.anode.tpc_y)
                     packet_z.append(p.z_global())
 
+                print(len(packet_z), len(depo_z))
                 fig = plt.figure()
                 ax = fig.add_subplot(projection='3d')
                 ax.scatter(vertex_z, vertex_x, vertex_y, label='vertex', marker='x', s=40)

@@ -23,7 +23,7 @@ class Detector:
   time_padding: float = 10 # us
   sample_points: int = 40
   long_diff: float = 4.0e-6 # cm^2/us
-  tran_diff: float = 8.8e-6 # cm^2/us 
+  tran_diff: float = 8.8e-6 # cm^2/us
   time_window: float = 8.9 # us
   drift_length: float = 0 # cm
   response_sampling: float = 0.1 # us
@@ -42,7 +42,7 @@ class Detector:
   adc_ped: int = 0
 
   def get_time_ticks(self) -> np.ndarray:
-    return np.linspace(self.time_interval[0], self.time_interval[1], 
+    return np.linspace(self.time_interval[0], self.time_interval[1],
       int(round(self.time_interval[1] - self.time_interval[0])/self.time_sampling) + 1)
 
   def get_zlims(self) -> tuple:
@@ -51,7 +51,7 @@ class Detector:
 
 def set_detector_properties(detprop_file, pixel_file, pedestal=0) -> Detector:
     """
-    The function loads the detector properties and the pixel geometry YAML files and stores the 
+    The function loads the detector properties and the pixel geometry YAML files and stores the
     constants in a Detector dataclass
     Args:
         detprop_file (str): detector properties YAML

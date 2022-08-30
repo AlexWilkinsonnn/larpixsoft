@@ -15,6 +15,10 @@ class Track():
         self.trackid = track['trackID']
         self.dE = track['dE']
         self.eventid = track['eventID']
+        try:
+            self.active_volume = track['vol_active']
+        except ValueError:
+            self.active_volume = True
 
         self.detector = detector
 
