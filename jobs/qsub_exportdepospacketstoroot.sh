@@ -21,4 +21,4 @@ OUTPUT_NAME=${INPUT_NAME%.h5}_dump.root
 echo "Reading $INPUT_NAME"
 echo "Writing to ${OUTPUT_NAME}..."
 
-python export_depos_packets_toroot.py -o data/detsim_dump/${OUTPUT_NAME} data/detsim/nogaps/${INPUT_NAME}
+python export_depos_packets_toroot.py -o data/detsim_dump/nogaps/${OUTPUT_NAME} data/detsim/nogaps/${INPUT_NAME}
