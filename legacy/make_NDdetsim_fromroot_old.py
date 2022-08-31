@@ -179,7 +179,7 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
         id = event.eventid
         vertex_z = event.vertex[2]
 
-        if HIGHRES: # NOTE this needs updated for the no gap data
+        if HIGHRES:
             arrZ, arrU, arrV = get_high_res(event, MASK)
 
             SZ = sparse.COO.from_numpy(arrZ)
@@ -192,9 +192,9 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
 
             continue
 
-        arrZ = np.zeros((7, 480, 4492))
-        arrU = np.zeros((7, 800, 4492))
-        arrV = np.zeros((7, 800, 4492))
+        arrZ = np.zeros((6, 512, 4608))
+        arrU = np.zeros((6, 1024, 4608))
+        arrV = np.zeros((6, 1024, 4608))
         pixel_triggers = {}
 
         for hit in event.projection:
@@ -215,46 +215,31 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
             wire_distanceZ = hit[14]
             wire_distanceU = hit[15]
             wire_distanceV = hit[16]
-            nd_module_x = round(hit[17], 4)
-            print(chZ, tickZ)
-            print(chU, tickU)
-            print(chV, tickV)
 
-
-            print(nd_module_x)
             if fd_driftZ <= 0.0 or fd_driftU <= 0.0 or fd_driftV <= 0.0:
                 print("FD drift is brokey somewhere")
                 print(fd_driftZ, fd_driftU, fd_driftV, sep=" -- ")
 
-            if chZ != -1:
-                arrZ[0, chZ, tickZ] += adc
-                arrZ[1, chZ, tickZ] += np.sqrt(nd_drift) * adc
-                arrZ[2, chZ, tickZ] += np.sqrt(fd_driftZ) * adc
-                if adc:
-                    arrZ[3, chZ, tickZ] += 1
-                arrZ[5, chZ, tickZ] += wire_distanceZ * adc
-                arrZ[6, chZ, tickZ] = nd_module_x if abs(arrZ[6, chZ, tickZ]) < abs(nd_module_x) \
-                                                  else arrZ[6, chZ, tickZ]
+            arrZ[0, chZ + 16, tickZ + 58] += adc
+            arrZ[1, chZ + 16, tickZ + 58] += np.sqrt(nd_drift) * adc
+            arrZ[2, chZ + 16, tickZ + 58] += np.sqrt(fd_driftZ) * adc
+            if adc:
+                arrZ[3, chZ + 16, tickZ + 58] += 1
+            arrZ[5, chZ + 16, tickZ + 58] += wire_distanceZ * adc
 
-            if chU != -1:
-                arrU[0, chU, tickU] += adc
-                arrU[1, chU, tickU] += np.sqrt(nd_drift) * adc
-                arrU[2, chU, tickU] += np.sqrt(fd_driftU) * adc
-                if adc:
-                    arrU[3, chU, tickU] += 1
-                arrU[5, chU, tickU] += wire_distanceU * adc
-                arrU[6, chU, tickU] = nd_module_x if abs(arrU[6, chU, tickU]) < abs(nd_module_x) \
-                                                  else arrU[6, chU, tickU]
+            arrU[0, chU + 112, tickU + 58] += adc
+            arrU[1, chU + 112, tickU + 58] += np.sqrt(nd_drift) * adc
+            arrU[2, chU + 112, tickU + 58] += np.sqrt(fd_driftU) * adc
+            if adc:
+                arrU[3, chU + 112, tickU + 58] += 1
+            arrU[5, chU + 112, tickU + 58] += wire_distanceU * adc
 
-            if chV != -1:
-                arrV[0, chV, tickV] += adc
-                arrV[1, chV, tickV] += np.sqrt(nd_drift) * adc
-                arrV[2, chV, tickV] += np.sqrt(fd_driftV) * adc
-                if adc:
-                    arrV[3, chV, tickV] += 1
-                arrV[5, chV, tickV] += wire_distanceV * adc
-                arrV[6, chV, tickV] = nd_module_x if abs(arrV[6, chV, tickV]) < abs(nd_module_x) \
-                                                  else arrV[6, chV, tickV]
+            arrV[0, chV + 112, tickV + 58] += adc
+            arrV[1, chV + 112, tickV + 58] += np.sqrt(nd_drift) * adc
+            arrV[2, chV + 112, tickV + 58] += np.sqrt(fd_driftV) * adc
+            if adc:
+                arrV[3, chV + 112, tickV + 58] += 1
+            arrV[5, chV + 112, tickV + 58] += wire_distanceV * adc
 
             if (x, y) not in pixel_triggers:
                 pixel_triggers[(x, y)] = {
@@ -266,7 +251,6 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
                 pixel_triggers[(x,y)]['Z'][1].append(tickZ)
                 pixel_triggers[(x,y)]['U'][1].append(tickU)
                 pixel_triggers[(x,y)]['V'][1].append(tickV)
-
 
         for i, j in zip(arrZ[1].nonzero()[0], arrZ[1].nonzero()[1]):
             if arrZ[0][i, j] != 0:
@@ -305,23 +289,20 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
                 arrV[5][i, j] /= arrV[0][i, j]
 
         for pixel, trigger_data in pixel_triggers.items():
-            if trigger_data['Z'][0] != -1:
-                ticksZ = sorted(trigger_data['Z'][1])
-                first_triggersZ = [ tick for i, tick in enumerate(ticksZ) if i == 0 or tick - ticksZ[i - 1] > 15 ]
-                for trigger_tick in first_triggersZ:
-                    arrZ[4, trigger_data['Z'][0], trigger_tick] += 1
+            ticksZ = sorted(trigger_data['Z'][1])
+            first_triggersZ = [ tick for i, tick in enumerate(ticksZ) if i == 0 or tick - ticksZ[i - 1] > 15 ]
+            for trigger_tick in first_triggersZ:
+                arrZ[4, trigger_data['Z'][0] + 16, trigger_tick + 58] += 1
 
-            if trigger_data['U'][0] != -1:
-                ticksU = sorted(trigger_data['U'][1])
-                first_triggersU = [ tick for i, tick in enumerate(ticksU) if i == 0 or tick - ticksU[i - 1] > 15 ]
-                for trigger_tick in first_triggersU:
-                    arrU[4, trigger_data['U'][0], trigger_tick] += 1
+            ticksU = sorted(trigger_data['U'][1])
+            first_triggersU = [ tick for i, tick in enumerate(ticksU) if i == 0 or tick - ticksU[i - 1] > 15 ]
+            for trigger_tick in first_triggersU:
+                arrU[4, trigger_data['U'][0] + 112, trigger_tick + 58] += 1
 
-            if trigger_data['V'][0] != -1:
-                ticksV = sorted(trigger_data['V'][1])
-                first_triggersV = [ tick for i, tick in enumerate(ticksV) if i == 0 or tick - ticksV[i - 1] > 15 ]
-                for trigger_tick in first_triggersV:
-                    arrV[4, trigger_data['V'][0], trigger_tick] += 1
+            ticksV = sorted(trigger_data['V'][1])
+            first_triggersV = [ tick for i, tick in enumerate(ticksV) if i == 0 or tick - ticksV[i - 1] > 15 ]
+            for trigger_tick in first_triggersV:
+                arrV[4, trigger_data['V'][0] + 112, trigger_tick + 58] += 1
 
         if MASK:
             maskZ = get_nd_mask(arrZ[0], 15, 1)
@@ -338,15 +319,11 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
 
         # Plotting for validation
         if PLOT:
-            for name, arr in zip(["arrZ", "arrU", "arrV"], [arrZ, arrU, arrV]):
+            for name, arr in zip(["arrZ", "arrU", "arrV"], [arrZ[:, 16:-16, 58:-58], arrU[:, 16:-16, 112:-112], arrV[:, 16:-16, 112:-112]]):
                 arr_adc = arr[0]
                 arr_nddrift = arr[1]
                 arr_fddrift = arr[2]
                 arr_numpackets = arr[3]
-                arr_pixeltriggers = arr[4]
-                arr_wiredistance = arr[5]
-                arr_ndmodulex = arr[6]
-                arr_mask = arr[-1]
 
                 plt.imshow(np.ma.masked_where(arr_adc == 0, arr_adc).T, cmap='jet', interpolation='none', aspect='auto')
                 plt.title("{} ADC".format(name))
@@ -368,26 +345,6 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
                 plt.colorbar()
                 plt.show()
 
-                plt.imshow(np.ma.masked_where(arr_pixeltriggers == 0, arr_pixeltriggers).T, cmap='jet', interpolation='none', aspect='auto')
-                plt.title("{} num first pixel triggers".format(name))
-                plt.colorbar()
-                plt.show()
-
-                plt.imshow(np.ma.masked_where(arr_wiredistance == 0, arr_wiredistance).T, cmap='jet', interpolation='none', aspect='auto')
-                plt.title("{} wire distance".format(name))
-                plt.colorbar()
-                plt.show()
-
-                plt.imshow(np.ma.masked_where(arr_ndmodulex == 0, arr_ndmodulex).T, cmap='jet', interpolation='none', aspect='auto')
-                plt.title("{} ND x coord relative to drift volume".format(name))
-                plt.colorbar()
-                plt.show()
-
-                plt.imshow(np.ma.masked_where(arr_mask == 0, arr_mask).T, cmap='jet', interpolation='none', aspect='auto')
-                plt.title("{} signal mask from ND packets".format(name))
-                plt.colorbar()
-                plt.show()
-
         SZ = sparse.COO.from_numpy(arrZ)
         SU = sparse.COO.from_numpy(arrU)
         SV = sparse.COO.from_numpy(arrV)
@@ -406,10 +363,7 @@ def parse_arguments():
     parser.add_argument("-o", type=str, default='', help="output folder name")
     parser.add_argument("--plot", action='store_true')
     parser.add_argument("--mask", action='store_true')
-    parser.add_argument("--highRes", action='store_true', \
-        help="WARNING: need to fix for use with nogaps data. \
-              Use high resolution channel and tick \
-              (currently assume factors of 8 better wire and tick resolution")
+    parser.add_argument("--highRes", action='store_true', help="Use high resolution channel and tick (currently assume factors of 8 better wire and tick resolution")
     args = parser.parse_args()
 
     return (args.input_file, args.n, args.o, args.plot, args.mask, args.highRes, args.i)

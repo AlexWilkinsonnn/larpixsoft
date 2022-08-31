@@ -1,10 +1,12 @@
 *~
 .**.swp
+*.root
 
 /*.pdf
 data/
 __pycache__/
 plots/
+qsub_logs/
 
-*.root
+
 
