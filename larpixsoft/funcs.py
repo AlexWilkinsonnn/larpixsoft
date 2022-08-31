@@ -68,7 +68,10 @@ def get_events_no_cuts(packets, mc_packets_assn, tracks, geometry, detector):
             (track_obj.z > z_max or track_obj.z < z_min)):
             continue
 
-        my_tracks[event_ids.index(track_obj.eventid)].append(track_obj)
+        try:
+            my_tracks[event_ids.index(track_obj.eventid)].append(track_obj)
+        except ValueError: # If detsim failed at some point, there will be tracks with no packets
+            continue
 
     return data_packets, my_tracks
 
