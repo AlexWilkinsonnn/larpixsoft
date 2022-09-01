@@ -469,6 +469,11 @@ def parse_arguments():
     parser.add_argument("--bugfix", action='store_true', \
         help="Used Z RID for the U and V channels for the infillmask branches, can correct this \
               here rather than reprocessing")
+    # Too hacky, should just reprocess and not std::abs the drift length
+    # parser.add_argument("--signed_nddrift" action='store_true', \
+    #     help="Make nd drift length a signed quantity by scanning in ticks and flipping signs \
+    #           when length flips from between increasing and decreasing. Doing this to help network \
+    #           which tracks need to be joined either side of a cathode gap")
     args = parser.parse_args()
 
     return (args.input_file, args.n, args.o, args.plot, args.mask, args.highRes, args.infillmask, \

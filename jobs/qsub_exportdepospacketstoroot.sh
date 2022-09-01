@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#PBS -l walltime=04:00:00
+#PBS -l walltime=08:00:00
 
-#PBS -l cput=04:00:00
+#PBS -l cput=08:00:00
 
 #PBS -l mem=6000mb
 
