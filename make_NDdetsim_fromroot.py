@@ -158,7 +158,7 @@ def get_nd_mask(arr_nd, max_tick_shift, max_ch_shift):
 
     return nd_mask
 
-def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
+def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, INFILLMASK, START_I, BUGFIX):
     f = ROOT.TFile.Open(INPUT_FILE, "READ")
     t = f.Get("IonAndScint/packet_projections")
 
@@ -216,15 +216,10 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
             wire_distanceU = hit[15]
             wire_distanceV = hit[16]
             nd_module_x = round(hit[17], 4)
-            print(chZ, tickZ)
-            print(chU, tickU)
-            print(chV, tickV)
 
-
-            print(nd_module_x)
-            if fd_driftZ <= 0.0 or fd_driftU <= 0.0 or fd_driftV <= 0.0:
+            if fd_driftZ < 0.0 or fd_driftU < 0.0 or fd_driftV < 0.0:
                 print("FD drift is brokey somewhere")
-                print(fd_driftZ, fd_driftU, fd_driftV, sep=" -- ")
+                print(fd_driftZ, fd_driftU, fd_driftV)
 
             if chZ != -1:
                 arrZ[0, chZ, tickZ] += adc
@@ -323,6 +318,59 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
                 for trigger_tick in first_triggersV:
                     arrV[4, trigger_data['V'][0], trigger_tick] += 1
 
+        # This doesn't make much sense currently for reasons:
+        # Cant just smear along channsl becuase the gaps can be for one block of ticks or channels,
+        # or for induction not follow any ticks of channels at all. Just the depos are not enough
+        # to produce a solid mask.
+        # Also there are depos in the active LAr module dont map to a pixel (just off the edge
+        # still drifted I guess) so no-active volume depositions don't even fully define where
+        # the infill needs to happen
+        if INFILLMASK:
+            infill_maskZ = np.zeros((480, 4492))
+            for ch_tick in event.infillmaskz:
+                ch = int(ch_tick[0])
+                tick = int(ch_tick[1])
+
+                infill_maskZ[ch, tick] += 1
+
+            # infill_maskZ_original = np.copy(infill_maskZ)
+            # for tick_shift in range(1, 15 + 1):
+            #         infill_maskZ[:, tick_shift:] += infill_maskZ_original[:, :-tick_shift]
+            #         infill_maskZ[:, :-tick_shift] += infill_maskZ_original[:, tick_shift:]
+
+            infill_maskZ = infill_maskZ.astype(bool).astype(float)
+            arrZ = np.concatenate((arrZ, np.expand_dims(infill_maskZ, axis=0)), 0)
+
+            infill_maskU = np.zeros((800, 4492))
+            for ch_tick in event.infillmasku:
+                ch = int(ch_tick[0]) if not BUGFIX else int(ch_tick[0]) + 1600
+                tick = int(ch_tick[1])
+
+                infill_maskU[ch, tick] += 1
+
+            # infill_maskU_original = np.copy(infill_maskU)
+            # for tick_shift in range(1, 25 + 1):
+            #         infill_maskU[:, tick_shift:] += infill_maskU_original[:, :-tick_shift]
+            #         infill_maskU[:, :-tick_shift] += infill_maskU_original[:, tick_shift:]
+
+            infill_maskU = infill_maskU.astype(bool).astype(float)
+            arrU = np.concatenate((arrU, np.expand_dims(infill_maskU, axis=0)), 0)
+
+            infill_maskV = np.zeros((800, 4492))
+            for ch_tick in event.infillmaskv:
+                ch = int(ch_tick[0]) if not BUGFIX else int(ch_tick[0]) + 800
+                tick = int(ch_tick[1])
+
+                infill_maskV[ch, tick] += 1
+
+            # infill_maskV_original = np.copy(infill_maskV)
+            # for tick_shift in range(1, 25 + 1):
+            #         infill_maskV[:, tick_shift:] += infill_maskV_original[:, :-tick_shift]
+            #         infill_maskV[:, :-tick_shift] += infill_maskV_original[:, tick_shift:]
+
+            infill_maskV = infill_maskV.astype(bool).astype(float)
+            arrV = np.concatenate((arrV, np.expand_dims(infill_maskV, axis=0)), 0)
+
         if MASK:
             maskZ = get_nd_mask(arrZ[0], 15, 1)
             maskU = get_nd_mask(arrU[0], 25, 2)
@@ -388,6 +436,13 @@ def main(INPUT_FILE, N, OUTPUT_DIR, PLOT, MASK, HIGHRES, START_I):
                 plt.colorbar()
                 plt.show()
 
+                if INFILLMASK:
+                    arr_infillmask = arr[-2]
+                    plt.imshow(np.ma.masked_where((arr_adc - (arr_infillmask * 100)) == 0, (arr_adc - (arr_infillmask * 100))).T, cmap='jet', interpolation='none', aspect='auto')
+                    plt.title("{} required infill mask from ND depositions in gaps".format(name))
+                    plt.colorbar()
+                    plt.show()
+
         SZ = sparse.COO.from_numpy(arrZ)
         SU = sparse.COO.from_numpy(arrU)
         SV = sparse.COO.from_numpy(arrV)
@@ -410,9 +465,14 @@ def parse_arguments():
         help="WARNING: need to fix for use with nogaps data. \
               Use high resolution channel and tick \
               (currently assume factors of 8 better wire and tick resolution")
+    parser.add_argument("--infillmask", action='store_true')
+    parser.add_argument("--bugfix", action='store_true', \
+        help="Used Z RID for the U and V channels for the infillmask branches, can correct this \
+              here rather than reprocessing")
     args = parser.parse_args()
 
-    return (args.input_file, args.n, args.o, args.plot, args.mask, args.highRes, args.i)
+    return (args.input_file, args.n, args.o, args.plot, args.mask, args.highRes, args.infillmask, \
+            args.i, args.bugfix)
 
 if __name__ == '__main__':
     arguments = parse_arguments()
