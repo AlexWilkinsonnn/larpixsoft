@@ -111,24 +111,61 @@ def main(INPUT_FILES, OUTPUT_NAME, PLOT):
                     packet_y.append(p.y + p.anode.tpc_y)
                     packet_z.append(p.z_global())
 
-                print(len(packet_z), len(depo_z))
+                print("Packets:", len(packet_z), "Depos:",len(depo_z))
                 fig = plt.figure()
-                ax = fig.add_subplot(projection='3d')
-                ax.scatter(vertex_z, vertex_x, vertex_y, label='vertex', marker='x', s=40)
-                ax.scatter(depo_z, depo_x, depo_y, label='depo', marker='o')
-                ax.scatter(packet_z, packet_x, packet_y, label='packet', marker='o')
-                ax.set_xlabel('Z')
-                ax.set_ylabel('X')
-                ax.set_zlabel('Y')
+                ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+                ax2 = fig.add_subplot(1, 2, 2, projection='3d')
+
+                ax1.scatter(vertex_z, vertex_x, vertex_y, label='vertex', marker='x', s=40)
+                ax1.scatter(packet_z, packet_x, packet_y, label='packet', marker='o', color='g')
 
                 xlims = (413.72, 916.68)
                 ylims = (-148.613, 155.387)
                 zlims = (-356.7, 356.7)
-                ax.set_xlim(zlims[0] - 50, zlims[1] + 50)
-                ax.set_ylim(xlims[0] - 50, xlims[1] + 50)
-                ax.set_zlim(ylims[0] - 50, ylims[1] + 50)
 
-                plt.legend(loc='lower left')
+                ax1.set_xlabel('Z')
+                ax1.set_ylabel('X')
+                ax1.set_zlabel('Y')
+                ax1.set_xlim(zlims[0] - 50, zlims[1] + 50)
+                ax1.set_ylim(xlims[0] - 50, xlims[1] + 50)
+                ax1.set_zlim(ylims[0] - 50, ylims[1] + 50)
+                ax1.legend(loc="lower left")
+
+                ax2.scatter(vertex_z, vertex_x, vertex_y, label='vertex', marker='x', s=40)
+                ax2.scatter(depo_z, depo_x, depo_y, label='depo', marker='o', color='r')
+
+                ax2.set_xlabel('Z')
+                ax2.set_ylabel('X')
+                ax2.set_zlabel('Y')
+                ax2.set_xlim(zlims[0] - 50, zlims[1] + 50)
+                ax2.set_ylim(xlims[0] - 50, xlims[1] + 50)
+                ax2.set_zlim(ylims[0] - 50, ylims[1] + 50)
+                ax2.legend(loc="lower left")
+
+                lines = [
+                    ((xlims[0], xlims[1]), (zlims[0],) * 2, (ylims[0],) * 2), # left low /
+                    ((xlims[0],) * 2, (zlims[0], zlims[1]), (ylims[0],) * 2), # low front -
+                    ((xlims[0],) * 2, (zlims[0],) * 2, (ylims[0], ylims[1])), # left front |
+                    ((xlims[0], xlims[1]), (zlims[0],) * 2, (ylims[1],) * 2), # left up /
+                    ((xlims[0],) * 2, (zlims[0], zlims[1]), (ylims[1],) * 2), # up front -
+                    ((xlims[1],) * 2, (zlims[0], zlims[1]), (ylims[1],) * 2), # up back -
+                    ((xlims[1],) * 2, (zlims[0],) * 2, (ylims[1], ylims[0])), # left back |
+                    ((xlims[0],) * 2, (zlims[1],) * 2, (ylims[0], ylims[1])), # right front |
+                    ((xlims[0], xlims[1]), (zlims[1],) * 2, (ylims[0],) * 2), # right low /
+                    ((xlims[1],) * 2, (zlims[1],) * 2, (ylims[0], ylims[1])), # right back |
+                    ((xlims[1],) * 2, (zlims[1], zlims[0]), (ylims[0],) * 2), # low back -
+                    ((xlims[0], xlims[1]), (zlims[1],) * 2, (ylims[1],) * 2)  # right up /
+                ]
+                for line in lines:
+                    # Need to swap x and z from how we did it earlier because other coords are in
+                    # edep-sim convention and these are in ND convention
+                    ax1.plot(
+                        line[1], line[0], zs=line[2], color='black', label='_', linestyle='dashed'
+                    )
+                    ax2.plot(
+                        line[1], line[0], zs=line[2], color='black', label='_', linestyle='dashed'
+                    )
+
                 fig.tight_layout()
                 plt.show()
 
