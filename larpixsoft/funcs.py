@@ -14,13 +14,12 @@ def get_wires(pitch, x_start):
 
     return wires
 
-def get_events_no_cuts(packets, mc_packets_assn, tracks, geometry, detector):
+def get_events_no_cuts(packets, mc_packets_assn, tracks, geometry, detector, no_tracks=False):
     data_packets = []
 
     event_data_packets = []
     event_ids = []
 
-    cnt = 0
     for i, packet in enumerate(tqdm(packets)):
         if packet['packet_type'] == 7 and event_data_packets: # End of packet for current trigger.
             data_packets.append(list(event_data_packets)) # Explicit list to copy
@@ -53,6 +52,9 @@ def get_events_no_cuts(packets, mc_packets_assn, tracks, geometry, detector):
 
     if len(data_packets) != len(event_ids):
         raise Exception("bruh")
+
+    if no_tracks:
+        return data_packets
 
     x_max, y_max, z_max = np.max(np.max(detector.tpc_borders, 2), 0)
     x_min, y_min, z_min = np.min(np.min(detector.tpc_borders, 2), 0)
