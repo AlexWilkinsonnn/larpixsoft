@@ -158,3 +158,13 @@ class Track():
 
     def drift_time_upperz(self, z):
         return ((self.detector.get_zlims()[1] - z)/self.detector.vdrift)*(1/self.detector.time_sampling) + self.t/1000
+
+
+class Vertex:
+    def __init__(self, vertex):
+        # Edep has x <-> z as it should be
+        self.eventid = vertex["eventID"]
+        self.x = vertex["z_vert"] / 10
+        self.y = vertex["y_vert"] / 10
+        self.z = vertex["x_vert"] / 10
+

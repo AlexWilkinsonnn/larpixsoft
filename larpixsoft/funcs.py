@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 
 from larpixsoft.packet import DataPacket, TriggerPacket
-from larpixsoft.track import Track
+from larpixsoft.track import Track, Vertex
 from larpixsoft.anode import Anode
 
 def get_wires(pitch, x_start):
@@ -14,7 +14,9 @@ def get_wires(pitch, x_start):
 
     return wires
 
-def get_events_no_cuts(packets, mc_packets_assn, tracks, geometry, detector, no_tracks=False):
+def get_events_no_cuts(
+    packets, mc_packets_assn, tracks, geometry, detector, no_tracks=False, vertices=None
+):
     data_packets = []
 
     event_data_packets = []
@@ -52,9 +54,20 @@ def get_events_no_cuts(packets, mc_packets_assn, tracks, geometry, detector, no_
 
     if len(data_packets) != len(event_ids):
         raise Exception("bruh")
+    if len(set(event_ids)) != len(event_ids):
+        raise Exception("bruhbruh")
+
+    if vertices is not None:
+        id_vertex = { vertex["eventID"] : Vertex(vertex) for vertex in vertices }
+        my_vertices = []
+        for event_id in event_ids:
+            my_vertices.append(id_vertex[event_id])
 
     if no_tracks:
-        return data_packets
+        if vertices is not None:
+            return data_packets, my_vertices
+        else:
+            return data_packets
 
     x_max, y_max, z_max = np.max(np.max(detector.tpc_borders, 2), 0)
     x_min, y_min, z_min = np.min(np.min(detector.tpc_borders, 2), 0)
@@ -75,7 +88,10 @@ def get_events_no_cuts(packets, mc_packets_assn, tracks, geometry, detector, no_
         except ValueError: # If detsim failed at some point, there will be tracks with no packets
             continue
 
-    return data_packets, my_tracks
+    if vertices is not None:
+        return data_packets, my_tracks, my_vertices
+    else:
+        return data_packets, my_tracks
 
 def get_events(packets, mc_packets_assn, tracks, geometry, detector, N=0, x_min_max=(0,0)):
     my_tracks, event_tracks = [], []

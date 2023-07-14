@@ -9,44 +9,48 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Detector:
-  """
-  Detector constants
-  """
-  mm2cm: float = 0.1
-  cm2mm: float = 10
-  lar_density: float = 1.38 # g/cm^3
-  E_field: float = 0.50 # kV/cm
-  vdrift: float = 0.1648 # cm/us
-  lifetime: float = 2.2e3 # us
-  time_sampling: float = 0.1 # us
-  time_interval: tuple = (0, 200.) # us
-  time_padding: float = 10 # us
-  sample_points: int = 40
-  long_diff: float = 4.0e-6 # cm^2/us
-  tran_diff: float = 8.8e-6 # cm^2/us
-  time_window: float = 8.9 # us
-  drift_length: float = 0 # cm
-  response_sampling: float = 0.1 # us
-  tpc_borders: np.ndarray = np.zeros((0, 3, 2)) # cm
-  tpc_offsets: np.ndarray = np.zeros((0, 3, 2)) # cm
-  tile_borders: np.ndarray = np.zeros((2, 2)) # cm
-  N_pixels: tuple = (0, 0)
-  N_pixels_per_tile: tuple = (0, 0)
-  pixel_connection_dict: dict = field(default_factory=dict)
-  pixel_pitch: float = 0.4434 # cm
-  tile_positions: dict = field(default_factory=dict) # mm
-  tile_orientations: dict = field(default_factory=dict) # cm
-  tile_map: tuple = ()
-  tile_chip_to_io: dict = field(default_factory=dict)
-  module_to_io_groups: dict = field(default_factory=dict)
-  adc_ped: int = 0
+    """
+    Detector constants
+    """
+    mm2cm: float = 0.1
+    cm2mm: float = 10
+    lar_density: float = 1.38 # g/cm^3
+    e_field: float = 0.50 # kV/cm
+    vdrift: float = 0.1648 # cm/us
+    lifetime: float = 2.2e3 # us
+    time_sampling: float = 0.1 # us
+    time_interval: tuple = (0, 200.) # us
+    time_padding: float = 10 # us
+    sample_points: int = 40
+    long_diff: float = 4.0e-6 # cm^2/us
+    tran_diff: float = 8.8e-6 # cm^2/us
+    time_window: float = 8.9 # us
+    drift_length: float = 0 # cm
+    response_sampling: float = 0.1 # us
+    tpc_borders: np.ndarray = np.zeros((0, 3, 2)) # cm
+    tpc_offsets: np.ndarray = np.zeros((0, 3, 2)) # cm
+    tile_borders: np.ndarray = np.zeros((2, 2)) # cm
+    N_pixels: tuple = (0, 0)
+    N_pixels_per_tile: tuple = (0, 0)
+    pixel_connection_dict: dict = field(default_factory=dict)
+    pixel_pitch: float = 0.4434 # cm
+    tile_positions: dict = field(default_factory=dict) # mm
+    tile_orientations: dict = field(default_factory=dict) # cm
+    tile_map: tuple = ()
+    tile_chip_to_io: dict = field(default_factory=dict)
+    module_to_io_groups: dict = field(default_factory=dict)
+    adc_ped: int = 0
+    electron_mobility_params: tuple = (551.6, 7158.3, 4440.43, 4.29, 43.63, 0.2053)
+    temperature: float = 87.17
 
-  def get_time_ticks(self) -> np.ndarray:
-    return np.linspace(self.time_interval[0], self.time_interval[1],
-      int(round(self.time_interval[1] - self.time_interval[0])/self.time_sampling) + 1)
+    def get_time_ticks(self) -> np.ndarray:
+        return np.linspace(
+            self.time_interval[0], self.time_interval[1],
+            int(round(self.time_interval[1] - self.time_interval[0])/self.time_sampling) + 1
+        )
 
-  def get_zlims(self) -> tuple:
-    return (np.min(self.tpc_borders[:, 2, :]), np.max(self.tpc_borders[:, 2, :]))
+    def get_zlims(self) -> tuple:
+        return (np.min(self.tpc_borders[:, 2, :]), np.max(self.tpc_borders[:, 2, :]))
 
 
 def set_detector_properties(detprop_file, pixel_file, pedestal=0) -> Detector:
@@ -71,7 +75,10 @@ def set_detector_properties(detprop_file, pixel_file, pedestal=0) -> Detector:
 
     consts['time_interval'] = np.array(detprop['time_interval'])
 
-    for key in ['time_padding', 'time_window', 'vdrift', 'lifetime', 'long_diff', 'tran_diff', 'response_sampling']:
+    for key in [
+        'time_padding', 'time_window', 'vdrift', 'lifetime', 'long_diff', 'tran_diff',
+        'response_sampling', "temperature", "e_field"
+    ]:
       if key in detprop:
         consts[key] = detprop[key]
 
@@ -80,7 +87,10 @@ def set_detector_properties(detprop_file, pixel_file, pedestal=0) -> Detector:
 
     consts['pixel_pitch'] = tile_layout['pixel_pitch'] * default_detector.mm2cm
     chip_channel_to_position = tile_layout['chip_channel_to_position']
-    consts['pixel_connection_dict'] = { tuple(pix) : (chip_channel//1000, chip_channel%1000) for chip_channel, pix in chip_channel_to_position.items() }
+    consts['pixel_connection_dict'] = {
+        tuple(pix) : (chip_channel//1000, chip_channel%1000)
+        for chip_channel, pix in chip_channel_to_position.items()
+    }
     consts['tile_chip_to_io'] = tile_layout['tile_chip_to_io']
 
     xs = np.array(list(chip_channel_to_position.values()))[:,0] * consts['pixel_pitch']
@@ -131,4 +141,14 @@ def set_detector_properties(detprop_file, pixel_file, pedestal=0) -> Detector:
 
     consts['adc_ped'] = pedestal
 
+    a0, a1, a2, a3, a4, a5 = default_detector.electron_mobility_params
+    efield = consts["e_field"]
+    temp = consts["temperature"]
+    num = a0 + a1 * efield + a2 * pow(efield, 1.5) + a3 * pow(efield, 2.5)
+    denom = 1 + (a1 / a0) * efield + a4 * pow(efield, 2) + a5 * pow(efield, 3)
+    temp_corr = pow(temp / 89, -1.5)
+    mu = num / denom * temp_corr * 1e-6 / 1e-3 
+    consts["vdrift"] = efield * mu
+
     return Detector(**consts)
+
