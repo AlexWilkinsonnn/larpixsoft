@@ -40,8 +40,11 @@ def get_events_no_cuts(
 
         elif packet['packet_type'] == 0: # Data packet of current trigger.
             p = DataPacket(packet, geometry, detector, i)
-            p.add_trigger(trigger)
-            event_data_packets.append(p)
+            # The packet timestamp is a few ticks behind the trigger very rarely
+            # (0-2 times per event). Not sure what the cause is as a few ticks behind means they
+            # are not part of the previous trigger.
+            if p.add_trigger(trigger):
+                event_data_packets.append(p)
 
     if event_data_packets:
         data_packets.append(list(event_data_packets))
@@ -120,7 +123,8 @@ def get_events(packets, mc_packets_assn, tracks, geometry, detector, N=0, x_min_
 
         elif packet['packet_type'] == 0:
             p = DataPacket(packet, geometry, detector)
-            p.add_trigger(trigger)
+            if not p.add_trigger(trigger):
+                continue
 
             if x_min_max != (0,0): # x cuts are active
                 valid = True
@@ -197,7 +201,8 @@ def get_events_vertex_cuts(packets, mc_packets_assn, tracks, geometry, detector,
 
         elif packet['packet_type'] == 0: # At new event
             p = DataPacket(packet, geometry, detector, i)
-            p.add_trigger(trigger)
+            if not p.add_trigger(trigger):
+                continue
 
             # Get vertex using eventid of the first track related to this event
             if not packet_tracks_assn:

@@ -40,6 +40,7 @@ class DataPacket():
 
     def add_trigger(self, trigger_packet : TriggerPacket):
         self.t_0 = trigger_packet.t
+        return self.t_0 <= self.timestamp
 
     def t(self):
         return self.timestamp - self.t_0
