@@ -10,12 +10,20 @@ class DataPacket():
     def __init__(self, packet, geometry, detector : Detector, id=-1):
         self.detector = detector
         self.timestamp = packet['timestamp']
-        self.ADC = packet['dataword'] if packet['dataword'] == 0 else packet['dataword'] - detector.adc_ped
+        self.ADC = (
+            packet['dataword']
+            if packet['dataword'] == 0
+            else packet['dataword'] - detector.adc_ped
+        )
         self.t_0 = 0.0
 
-        io_group, io_channel, chip, channel = packet['io_group'], packet['io_channel'], packet['chip_id'], packet['channel_id']
-        module_id = (io_group - 1)//4 # need modules to start from 0 because of tpc_offsets
-        io_group = io_group - ((io_group - 1)//4)*4 # tile to io is only defined for first 4 io groups of first module
+        io_group, io_channel, chip, channel = (
+            packet['io_group'], packet['io_channel'], packet['chip_id'], packet['channel_id']
+        )
+        # need modules to start from 0 because of tpc_offsets
+        module_id = (io_group - 1) // 4
+        # tile to io is only defined for first 4 io groups of first module
+        io_group = io_group - ((io_group - 1) // 4) * 4
         self.io_group = io_group
         self.x, self.y = geometry[(io_group, io_channel, chip, channel)]
         self.anode = Anode(module_id, io_group, detector)
@@ -46,7 +54,8 @@ class DataPacket():
         return self.timestamp - self.t_0
 
     def z(self):
-        return self.t()*self.detector.time_sampling*self.detector.vdrift # [ND tick]*[us]*[cm/us] = [cm]
+        # [ND tick]*[us]*[cm/us] = [cm]
+        return self.t() * self.detector.time_sampling * self.detector.vdrift
 
     def z_to_lowerz(self):
         """
@@ -73,14 +82,20 @@ class DataPacket():
 
         return z_d
 
-    def z_global(self):
+    def z_global(self, centre=False):
         """
-        Get z coordinate in detector coordinates.
+        Get z coordinate in detector coordinates. Centre returns the position in the centre of the
+        spatial bin defined by the time tick.
         """
-        if self.io_group in [1,2]: # These are the lower z apas so facing in the increasing z direction
+        # These are the lower z apas so facing in the increasing z direction
+        if self.io_group in [1,2]:
             z = self.anode.z + self.z()
+            if centre:
+                z += self.detector.time_sampling * self.detector.vdrift
         else:
             z = self.anode.z - self.z()
+            if centre:
+                z -= self.detector.time_sampling * self.detector.vdrift
 
         return z
 
