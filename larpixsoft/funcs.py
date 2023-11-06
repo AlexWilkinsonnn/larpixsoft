@@ -60,6 +60,8 @@ def get_events_no_cuts(
     if len(set(event_ids)) != len(event_ids):
         raise Exception("bruhbruh")
 
+    # NOTE events can have multiple primaries (gps multiparticle) and so multiple vertices, should
+    # make this a list of vertices but too lazy to check if this will break anything else atm
     if vertices is not None:
         id_vertex = { vertex["eventID"] : Vertex(vertex) for vertex in vertices }
         my_vertices = []
