@@ -91,11 +91,11 @@ class DataPacket():
         if self.io_group in [1,2]:
             z = self.anode.z + self.z()
             if centre:
-                z += self.detector.time_sampling * self.detector.vdrift
+                z += self.detector.time_sampling * self.detector.vdrift / 2
         else:
             z = self.anode.z - self.z()
             if centre:
-                z -= self.detector.time_sampling * self.detector.vdrift
+                z -= self.detector.time_sampling * self.detector.vdrift / 2
 
         return z
 
