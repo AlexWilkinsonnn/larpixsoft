@@ -18,6 +18,7 @@ def main(INPUT_FILE, PRINT_DETECTORS, DETECTORS, SINGLE_SEGMENT_DSET):
     dummyDetector = Detector()
     for vertex in edep_data['vertices']:
         eventID = vertex['eventID']
+        print(eventID, vertex)
 
         vertex_x = vertex['x_vert'] / 10
         vertex_y = vertex['y_vert'] / 10
@@ -94,12 +95,21 @@ def parse_arguments():
 
     parser.add_argument("input_file")
 
-    parser.add_argument("--print_detectors", action='store_true', \
-        help="print available detectors and exit")
-    parser.add_argument("--single_segment_dset", type=str, default='', \
-        help="input file has a single semgment dataset with this name" )
-    parser.add_argument("-d", "--detectors", default=[], help="comma delimited list", \
-        type=lambda dets: [ det for det in dets.split(',') ])
+    parser.add_argument(
+        "--print_detectors", action='store_true',
+        help="print available detectors and exit"
+    )
+    parser.add_argument(
+        "--single_segment_dset", type=str, default='',
+        help=(
+            "input file has a single semgment dataset with this name." +
+            "USE THIS IS IF DATASET ONLY HAS A SINGLE 'segments'!"
+        )
+    )
+    parser.add_argument(
+        "-d", "--detectors", default=[], help="comma delimited list",
+        type=lambda dets: [ det for det in dets.split(',') ]
+    )
 
     args = parser.parse_args()
 
