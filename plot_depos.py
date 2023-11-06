@@ -16,8 +16,12 @@ def main(INPUT_FILE, PRINT_DETECTORS, DETECTORS, SINGLE_SEGMENT_DSET):
         return
 
     dummyDetector = Detector()
+    seen_eventIDs = set()
     for vertex in edep_data['vertices']:
         eventID = vertex['eventID']
+        if eventID in seen_eventIDs:
+            continue
+        seen_eventIDs.add(eventID)
         print(eventID, vertex)
 
         vertex_x = vertex['x_vert'] / 10
