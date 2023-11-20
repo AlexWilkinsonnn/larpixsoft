@@ -18,16 +18,13 @@ PACKETS_3D_DTYPE = np.dtype(
 
 
 def main(args):
-    detector = set_detector_properties(
-        'data/detector/ndlar-module.yaml','data/pixel_layout/multi_tile_layout-3.0.40.yaml',
-        pedestal=74
-    )
-    geometry = get_geom_map('data/pixel_layout/multi_tile_layout-3.0.40.yaml')
+    detector = set_detector_properties(args.detector_properties, args.pixel_layout, pedestal=74)
+    geometry = get_geom_map(args.pixel_layout)
 
     in_f = h5py.File(args.input_file, 'r')
 
     packets, vertices = get_events_no_cuts(
-        in_f["packets"][:10000], in_f["mc_packets_assn"][:10000], in_f["tracks"], geometry, detector,
+        in_f["packets"], in_f["mc_packets_assn"], in_f["tracks"], geometry, detector,
         no_tracks=True, vertices=in_f["vertices"]
     )
     vertices = vertices[:len(packets)]
@@ -62,6 +59,8 @@ def parse_arguments():
 
     parser.add_argument("input_file")
     parser.add_argument("output_file")
+    parser.add_argument("detector_properties")
+    parser.add_argument("pixel_layout")
 
     args = parser.parse_args()
 
