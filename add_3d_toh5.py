@@ -12,7 +12,8 @@ PACKETS_3D_DTYPE = np.dtype(
     [
         ("eventID", "u4"),
         ("adc", "f4"),
-        ("x", "f4"), ("x_module", "f4"), ("y", "f4"), ("z", "f4"), ("z_module", "f4")
+        ("x", "f4"), ("x_module", "f4"), ("y", "f4"), ("z", "f4"), ("z_module", "f4"),
+        ("forward_facing_anode", "u4")
     ]
 )
 
@@ -47,6 +48,11 @@ def main(args):
                 event_packets_3d[i_p]["y"] = p.y + p.anode.tpc_y
                 event_packets_3d[i_p]["z"] = p.z_global()
                 event_packets_3d[i_p]["z_module"] = p.z()
+                # There seems to always be a constant offset in z (drift coord) between packets
+                # and tracks. The direction of this offset is reversed due to the +/- required
+                # for anodes facing forwards/backwards. Want this in the pixel map so the model can
+                # learn it
+                event_packets_3d[i_p]["forward_facing_anode"] = int(p.io_group in [1, 2])
             packets_3d_list.append(event_packets_3d)
 
         packets_3d = np.concatenate(packets_3d_list, axis=0)
